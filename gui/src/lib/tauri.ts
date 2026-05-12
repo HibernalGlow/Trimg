@@ -16,8 +16,9 @@ export interface ProcessOptions {
   operation: "convert" | "optimize" | "resize" | "crop" | "extend";
   format?: string;
   quality: number;
-  effort: number;
-  threads: number;
+  effort?: number;
+  threads?: number;
+  lossless?: boolean;
   width?: number;
   height?: number;
   x?: number;
@@ -32,6 +33,7 @@ export interface ProcessOptions {
   clear_file_list?: boolean;
   delete_original?: boolean;
   delete_original_mode?: DeleteOriginalMode;
+  keep_timestamps?: boolean;
   overwrite: boolean;
 }
 
