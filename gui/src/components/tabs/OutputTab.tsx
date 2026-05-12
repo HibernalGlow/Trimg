@@ -29,7 +29,13 @@ const FORMAT_OPTIONS = [
   "WebP",
   "JPEG",
   "PNG",
+  "Lossless JPEG Transcoding",
+  "JPEG Reconstruction",
+  "Smallest Lossless",
 ] as const;
+
+const CHROMA_SUBSAMPLING_OPTIONS = ["Default", "4:4:4", "4:2:2", "4:2:0"] as const;
+const CHROMA_SUBSAMPLING_AVIF_OPTIONS = ["Default", "4:4:4", "4:2:2", "4:2:0", "4:0:0"] as const;
 
 export function OutputTab({
   settings,
@@ -42,6 +48,8 @@ export function OutputTab({
   const [quality, setQuality] = useState(70);
   const [effort, setEffort] = useState(6);
   const [lossless, setLossless] = useState(false);
+  const [intelligentEffort, setIntelligentEffort] = useState(false);
+  const [jxlModular, setJxlModular] = useState(false);
   const [saveToMode, setSaveToMode] = useState<SaveToMode>(settings.saveToMode);
   const [outputDir, setOutputDir] = useState(settings.outputDir);
   const [keepFolderStructure, setKeepFolderStructure] = useState(settings.keepFolderStructure);
@@ -50,6 +58,16 @@ export function OutputTab({
   const [clearFileList, setClearFileList] = useState(settings.clearFileList);
   const [deleteOriginal, setDeleteOriginal] = useState(settings.deleteOriginal);
   const [deleteOriginalMode, setDeleteOriginalMode] = useState<DeleteOriginalMode>(settings.deleteOriginalMode);
+
+  const [chromaSubsampling, setChromaSubsampling] = useState<string>("Default");
+  const [jxlPngFallback, setJxlPngFallback] = useState(false);
+  const [jxlVerify, setJxlVerify] = useState(false);
+  const [jxlNormalize, setJxlNormalize] = useState(false);
+
+  const [smallestLosslessPng, setSmallestLosslessPng] = useState(true);
+  const [smallestLosslessWebp, setSmallestLosslessWebp] = useState(true);
+  const [smallestLosslessJxl, setSmallestLosslessJxl] = useState(true);
+  const [maxCompression, setMaxCompression] = useState(false);
 
   useEffect(() => {
     switch (format) {
@@ -71,6 +89,9 @@ export function OutputTab({
       case "PNG":
         setQuality(90);
         break;
+      case "Lossless JPEG Transcoding":
+        setEffort(7);
+        break;
     }
   }, [format]);
 
@@ -88,6 +109,9 @@ export function OutputTab({
       WebP: "webp",
       JPEG: "jpeg",
       PNG: "png",
+      "Lossless JPEG Transcoding": "jxl",
+      "JPEG Reconstruction": "jxl",
+      "Smallest Lossless": "png",
     };
 
     const options: ProcessOptions = {
@@ -96,7 +120,7 @@ export function OutputTab({
       quality,
       effort,
       threads,
-      lossless,
+      lossless: format === "Lossless JPEG Transcoding" ? true : lossless,
       save_to_mode: saveToMode,
       output_dir: saveToMode === "custom" ? outputDir : undefined,
       keep_folder_structure: keepFolderStructure,
@@ -109,26 +133,21 @@ export function OutputTab({
 
     onConvert(options);
   }, [
-    format,
-    quality,
-    effort,
-    threads,
-    lossless,
-    saveToMode,
-    outputDir,
-    keepFolderStructure,
-    onOutputExists,
-    clearFileList,
-    deleteOriginal,
-    deleteOriginalMode,
-    onConvert,
+    format, quality, effort, threads, lossless, saveToMode, outputDir,
+    keepFolderStructure, onOutputExists, clearFileList, deleteOriginal,
+    deleteOriginalMode, onConvert,
   ]);
 
   const effortLabel = format === "AVIF" ? "Speed" : format === "WebP" ? "Method" : "Effort";
   const effortMax = format === "WebP" ? 6 : format === "AVIF" ? 10 : 10;
-  const showEffort = ["JPEG XL", "AVIF", "WebP"].includes(format);
+  const showEffort = ["JPEG XL", "AVIF", "WebP", "Lossless JPEG Transcoding"].includes(format);
   const showLossless = ["JPEG XL", "WebP"].includes(format);
-  const showQuality = !lossless;
+  const showQuality = !lossless && !["Lossless JPEG Transcoding", "JPEG Reconstruction", "Smallest Lossless"].includes(format);
+  const showChromaSubsampling = ["JPEG", "AVIF"].includes(format);
+  const showJxlOptions = format === "JPEG XL";
+  const showSmallestLossless = format === "Smallest Lossless";
+  const showJxlReconstruct = format === "JPEG Reconstruction";
+  const showLosslessJpeg = format === "Lossless JPEG Transcoding";
 
   return (
     <div className="grid grid-cols-2 gap-4">
@@ -168,7 +187,7 @@ export function OutputTab({
               size="sm"
               onClick={handleChooseOutput}
               disabled={saveToMode !== "custom"}
-              className="shrink-0"
+              className="shrink-0 px-2"
             >
               ...
             </Button>
@@ -191,16 +210,14 @@ export function OutputTab({
         </h3>
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <Label className="text-sm whitespace-nowrap">Format / Mode</Label>
+            <Label className="text-sm whitespace-nowrap w-24">Format / Mode</Label>
             <Select value={format} onValueChange={setFormat}>
               <SelectTrigger className="flex-1">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {FORMAT_OPTIONS.map((f) => (
-                  <SelectItem key={f} value={f}>
-                    {f}
-                  </SelectItem>
+                  <SelectItem key={f} value={f}>{f}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -208,14 +225,23 @@ export function OutputTab({
 
           {showEffort && (
             <div className="flex items-center gap-3">
-              <Label className="text-sm whitespace-nowrap">{effortLabel}</Label>
+              <Label className="text-sm whitespace-nowrap w-24">{effortLabel}</Label>
+              {showJxlOptions && (
+                <Checkbox
+                  checked={intelligentEffort}
+                  onCheckedChange={(c) => setIntelligentEffort(c === true)}
+                  className="mr-2"
+                />
+              )}
+              {showJxlOptions && <span className="text-xs text-muted-foreground mr-2">Intelligent</span>}
               <Slider
                 value={[effort]}
                 onValueChange={([v]) => setEffort(v)}
-                min={format === "JPEG XL" ? 1 : 0}
+                min={format === "JPEG XL" || format === "Lossless JPEG Transcoding" ? 1 : 0}
                 max={effortMax}
                 step={1}
                 className="flex-1"
+                disabled={showJxlOptions && intelligentEffort}
               />
               <span className="text-sm font-medium tabular-nums w-6 text-right">{effort}</span>
             </div>
@@ -223,12 +249,12 @@ export function OutputTab({
 
           {showQuality && (
             <div className="flex items-center gap-3">
-              <Label className="text-sm whitespace-nowrap">Quality</Label>
+              <Label className="text-sm whitespace-nowrap w-24">Quality</Label>
               <Slider
                 value={[quality]}
                 onValueChange={([v]) => setQuality(v)}
                 min={format === "PNG" ? 1 : 0}
-                max={100}
+                max={format === "AVIF" || format === "JPEG XL" ? 99 : 100}
                 step={1}
                 className="flex-1"
               />
@@ -237,10 +263,80 @@ export function OutputTab({
           )}
 
           {showLossless && (
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox checked={lossless} onCheckedChange={(c) => setLossless(c === true)} />
+                <span className="text-sm">Lossless</span>
+              </label>
+              {showJxlOptions && !lossless && (
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox checked={jxlModular} onCheckedChange={(c) => setJxlModular(c === true)} />
+                  <span className="text-sm">Lossy Modular</span>
+                </label>
+              )}
+            </div>
+          )}
+
+          {showChromaSubsampling && (
+            <div className="flex items-center gap-3">
+              <Label className="text-sm whitespace-nowrap w-24">Chroma Subsampling</Label>
+              <Select value={chromaSubsampling} onValueChange={setChromaSubsampling}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(format === "AVIF" ? CHROMA_SUBSAMPLING_AVIF_OPTIONS : CHROMA_SUBSAMPLING_OPTIONS).map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {showSmallestLossless && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox checked={smallestLosslessPng} onCheckedChange={(c) => setSmallestLosslessPng(c === true)} />
+                  <span className="text-sm">PNG (Oxipng)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox checked={smallestLosslessWebp} onCheckedChange={(c) => setSmallestLosslessWebp(c === true)} />
+                  <span className="text-sm">WebP</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox checked={smallestLosslessJxl} onCheckedChange={(c) => setSmallestLosslessJxl(c === true)} />
+                  <span className="text-sm">JPEG XL</span>
+                </label>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox checked={maxCompression} onCheckedChange={(c) => setMaxCompression(c === true)} />
+                <span className="text-sm">Max Compression</span>
+              </label>
+              <p className="text-xs text-muted-foreground">
+                Max Bit Depth: {smallestLosslessWebp ? "8-bit" : "16-bit"}
+              </p>
+            </div>
+          )}
+
+          {showJxlReconstruct && (
             <label className="flex items-center gap-2 cursor-pointer">
-              <Checkbox checked={lossless} onCheckedChange={(c) => setLossless(c === true)} />
-              <span className="text-sm">Lossless</span>
+              <Checkbox checked={jxlPngFallback} onCheckedChange={(c) => setJxlPngFallback(c === true)} />
+              <span className="text-sm">PNG Fallback</span>
             </label>
+          )}
+
+          {showLosslessJpeg && (
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox checked={jxlVerify} onCheckedChange={(c) => setJxlVerify(c === true)} />
+                <span className="text-sm">Verify</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <Checkbox checked={jxlNormalize} onCheckedChange={(c) => setJxlNormalize(c === true)} />
+                <span className="text-sm">Normalize</span>
+              </div>
+            </div>
           )}
         </div>
       </div>
@@ -252,11 +348,8 @@ export function OutputTab({
         </h3>
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <Label className="text-sm whitespace-nowrap">If Output Exists</Label>
-            <Select
-              value={onOutputExists}
-              onValueChange={(v) => setOnOutputExists(v as OnOutputExists)}
-            >
+            <Label className="text-sm whitespace-nowrap w-24">If Output Exists</Label>
+            <Select value={onOutputExists} onValueChange={(v) => setOnOutputExists(v as OnOutputExists)}>
               <SelectTrigger className="flex-1">
                 <SelectValue />
               </SelectTrigger>
@@ -269,7 +362,7 @@ export function OutputTab({
           </div>
 
           <div className="flex items-center gap-3">
-            <Label className="text-sm whitespace-nowrap">Threads</Label>
+            <Label className="text-sm whitespace-nowrap w-24">Threads</Label>
             <Slider
               value={[threads]}
               onValueChange={([v]) => setThreads(v)}
@@ -295,17 +388,11 @@ export function OutputTab({
           </label>
           <div className="flex items-center gap-3">
             <label className="flex items-center gap-2 cursor-pointer">
-              <Checkbox
-                checked={deleteOriginal}
-                onCheckedChange={(c) => setDeleteOriginal(c === true)}
-              />
+              <Checkbox checked={deleteOriginal} onCheckedChange={(c) => setDeleteOriginal(c === true)} />
               <span className="text-sm">Delete Original</span>
             </label>
             {deleteOriginal && (
-              <Select
-                value={deleteOriginalMode}
-                onValueChange={(v) => setDeleteOriginalMode(v as DeleteOriginalMode)}
-              >
+              <Select value={deleteOriginalMode} onValueChange={(v) => setDeleteOriginalMode(v as DeleteOriginalMode)}>
                 <SelectTrigger className="w-[130px]">
                   <SelectValue />
                 </SelectTrigger>
@@ -321,21 +408,28 @@ export function OutputTab({
 
       {/* Buttons */}
       <div className="col-span-2 flex gap-2 pt-2">
-        <Button
-          variant="outline"
-          onClick={() => {
-            setFormat("AVIF");
-            setQuality(70);
-            setEffort(6);
-            setLossless(false);
-            setSaveToMode("source");
-            setKeepFolderStructure(false);
-            setThreads(Math.max(navigator.hardwareConcurrency - 1, 1));
-            setOnOutputExists("rename");
-            setClearFileList(false);
-            setDeleteOriginal(false);
-          }}
-        >
+        <Button variant="outline" onClick={() => {
+          setFormat("AVIF");
+          setQuality(70);
+          setEffort(6);
+          setLossless(false);
+          setIntelligentEffort(false);
+          setJxlModular(false);
+          setSaveToMode("source");
+          setKeepFolderStructure(false);
+          setThreads(Math.max((navigator.hardwareConcurrency || 4) - 1, 1));
+          setOnOutputExists("rename");
+          setClearFileList(false);
+          setDeleteOriginal(false);
+          setChromaSubsampling("Default");
+          setJxlPngFallback(false);
+          setJxlVerify(false);
+          setJxlNormalize(false);
+          setSmallestLosslessPng(true);
+          setSmallestLosslessWebp(true);
+          setSmallestLosslessJxl(true);
+          setMaxCompression(false);
+        }}>
           Reset to Defaults
         </Button>
         <div className="flex-1" />

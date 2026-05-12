@@ -28,11 +28,25 @@ const DOWNSCALE_MODES = [
   "Percent",
   "Shortest Side",
   "Longest Side",
+  "File Size",
+] as const;
+
+const RESAMPLE_OPTIONS = [
+  "Default",
+  "Point",
+  "Bilinear",
+  "CatmullRom",
+  "MitchellNetravali",
+  "Lanczos3",
 ] as const;
 
 const METADATA_OPTIONS = [
   "Encoder - Wipe",
   "Encoder - Preserve",
+  "ExifTool - Wipe",
+  "ExifTool - Preserve",
+  "ExifTool - Unsafe Wipe",
+  "ExifTool - Custom",
 ] as const;
 
 export function ModifyTab({
@@ -50,6 +64,8 @@ export function ModifyTab({
   const [megapixels, setMegapixels] = useState(2);
   const [shortestSide, setShortestSide] = useState(1080);
   const [longestSide, setLongestSide] = useState(1920);
+  const [fileSize, setFileSize] = useState(500);
+  const [resample, setResample] = useState<string>("Default");
   const [keepTimestamps, setKeepTimestamps] = useState(false);
   const [metadata, setMetadata] = useState<string>("Encoder - Wipe");
 
@@ -83,6 +99,10 @@ export function ModifyTab({
         case "Longest Side":
           options.width = longestSide;
           options.resize_mode = "width";
+          break;
+        case "File Size":
+          // Target file size
+          options.target_file_size = fileSize * 1024;
           break;
       }
     }
@@ -118,9 +138,7 @@ export function ModifyTab({
               </SelectTrigger>
               <SelectContent>
                 {DOWNSCALE_MODES.map((m) => (
-                  <SelectItem key={m} value={m}>
-                    {m}
-                  </SelectItem>
+                  <SelectItem key={m} value={m}>{m}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -213,6 +231,34 @@ export function ModifyTab({
               <span className="text-sm text-muted-foreground">px</span>
             </div>
           )}
+
+          {downscaleMode === "File Size" && (
+            <div className="flex items-center gap-3">
+              <Label className="text-sm">File Size</Label>
+              <Input
+                type="number"
+                value={fileSize}
+                onChange={(e) => setFileSize(Number(e.target.value))}
+                className="flex-1 h-8"
+                disabled={!downscaleEnabled}
+              />
+              <span className="text-sm text-muted-foreground">KiB</span>
+            </div>
+          )}
+
+          <div className="flex items-center gap-3">
+            <Label className="text-sm">Resample</Label>
+            <Select value={resample} onValueChange={setResample} disabled={!downscaleEnabled}>
+              <SelectTrigger className="flex-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {RESAMPLE_OPTIONS.map((r) => (
+                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
@@ -238,9 +284,7 @@ export function ModifyTab({
               </SelectTrigger>
               <SelectContent>
                 {METADATA_OPTIONS.map((m) => (
-                  <SelectItem key={m} value={m}>
-                    {m}
-                  </SelectItem>
+                  <SelectItem key={m} value={m}>{m}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -250,21 +294,20 @@ export function ModifyTab({
 
       {/* Buttons */}
       <div className="col-span-2 flex gap-2 pt-2">
-        <Button
-          variant="outline"
-          onClick={() => {
-            setDownscaleEnabled(false);
-            setDownscaleMode("Resolution");
-            setMaxWidth(2000);
-            setMaxHeight(2000);
-            setPercent(80);
-            setMegapixels(2);
-            setShortestSide(1080);
-            setLongestSide(1920);
-            setKeepTimestamps(false);
-            setMetadata("Encoder - Wipe");
-          }}
-        >
+        <Button variant="outline" onClick={() => {
+          setDownscaleEnabled(false);
+          setDownscaleMode("Resolution");
+          setMaxWidth(2000);
+          setMaxHeight(2000);
+          setPercent(80);
+          setMegapixels(2);
+          setShortestSide(1080);
+          setLongestSide(1920);
+          setFileSize(500);
+          setResample("Default");
+          setKeepTimestamps(false);
+          setMetadata("Encoder - Wipe");
+        }}>
           Reset to Defaults
         </Button>
         <div className="flex-1" />
