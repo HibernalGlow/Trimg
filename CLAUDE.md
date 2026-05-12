@@ -36,7 +36,9 @@ cd gui && bun install && bun tauri dev
 cd gui && bun tauri build
 ```
 
-Build requirements: Rust 1.85+, C compiler, nasm, meson + ninja. Set `SYSTEM_DEPS_DAV1D_BUILD_INTERNAL=always` to build dav1d from source. The repo uses git submodules (`libjxl`), so run `git submodule update --init` after cloning.
+Build requirements: Rust 1.85+, C compiler, nasm, meson + ninja. The repo uses git submodules (`libjxl`), so run `git submodule update --init` after cloning.
+
+**Important — Windows MSVC build**: dav1d (the AVIF decoder) is compiled from C source via meson+ninja. On Windows, meson will pick MinGW GCC if it's in PATH, producing a `libdav1d.a` that cannot link with MSVC (missing `___chkstk_ms`, `__mingw_vfprintf`). Fix: build from a **Visual Studio Developer Command Prompt** where `cl.exe` is the default compiler. The `.cargo/config.toml` already sets `SYSTEM_DEPS_DAV1D_BUILD_INTERNAL=always` permanently. A convenience script `build_msvc.bat` runs vcvars64 → cargo build → cargo test in one step.
 
 ## Workspace structure
 
