@@ -2,17 +2,35 @@ import { useState, useCallback, useEffect } from "react";
 
 const STORAGE_KEY = "slimg-settings";
 
+export type SaveToMode = "source" | "custom";
+export type OnOutputExists = "rename" | "skip" | "overwrite";
+export type DeleteOriginalMode = "trash" | "permanent";
+
 export interface AppSettings {
   outputDir: string;
+  saveToMode: SaveToMode;
+  keepFolderStructure: boolean;
   defaultQuality: number;
+  effort: number;
   threads: number;
+  onOutputExists: OnOutputExists;
+  clearFileList: boolean;
+  deleteOriginal: boolean;
+  deleteOriginalMode: DeleteOriginalMode;
   overwrite: boolean;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
   outputDir: "",
+  saveToMode: "source",
+  keepFolderStructure: false,
   defaultQuality: 60,
+  effort: 6,
   threads: 1,
+  onOutputExists: "rename",
+  clearFileList: false,
+  deleteOriginal: false,
+  deleteOriginalMode: "trash",
   overwrite: false,
 };
 

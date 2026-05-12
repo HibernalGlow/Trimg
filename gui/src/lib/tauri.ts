@@ -8,10 +8,15 @@ export interface ImageInfo {
   thumbnail_base64: string;
 }
 
+export type SaveToMode = "source" | "custom";
+export type OnOutputExists = "rename" | "skip" | "overwrite";
+export type DeleteOriginalMode = "trash" | "permanent";
+
 export interface ProcessOptions {
   operation: "convert" | "optimize" | "resize" | "crop" | "extend";
   format?: string;
   quality: number;
+  effort: number;
   threads: number;
   width?: number;
   height?: number;
@@ -21,6 +26,12 @@ export interface ProcessOptions {
   fill_color?: string;
   resize_mode?: "width" | "height" | "exact" | "fit";
   output_dir?: string;
+  save_to_mode?: SaveToMode;
+  keep_folder_structure?: boolean;
+  on_output_exists?: OnOutputExists;
+  clear_file_list?: boolean;
+  delete_original?: boolean;
+  delete_original_mode?: DeleteOriginalMode;
   overwrite: boolean;
 }
 

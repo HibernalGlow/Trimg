@@ -37,6 +37,28 @@ pub enum Operation {
 }
 
 #[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum SaveToMode {
+    Source,
+    Custom,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum OnOutputExists {
+    Rename,
+    Skip,
+    Overwrite,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum DeleteOriginalMode {
+    Trash,
+    Permanent,
+}
+
+#[derive(Debug, Deserialize, Clone)]
 pub struct ProcessOptions {
     pub operation: Operation,
     pub format: Option<String>,
@@ -51,6 +73,12 @@ pub struct ProcessOptions {
     pub fill_color: Option<String>,
     pub resize_mode: Option<String>,
     pub output_dir: Option<String>,
+    pub save_to_mode: Option<SaveToMode>,
+    pub keep_folder_structure: Option<bool>,
+    pub on_output_exists: Option<OnOutputExists>,
+    pub clear_file_list: Option<bool>,
+    pub delete_original: Option<bool>,
+    pub delete_original_mode: Option<DeleteOriginalMode>,
     pub overwrite: bool,
 }
 
@@ -261,7 +289,7 @@ fn process_single_file(input: &str, options: &ProcessOptions) -> Result<ProcessR
 
     let (image, source_format) = slimg_core::decode(&raw_bytes).map_err(|e| e.to_string())?;
 
-    let effort = options.effort.unwrap_or(7);
+    let effort = options.effort.unwrap_or(6);
     let pipeline_result = if matches!(options.operation, Operation::Optimize) {
         slimg_core::optimize(&raw_bytes, options.quality, effort).map_err(|e| e.to_string())?
     } else {
@@ -269,16 +297,59 @@ fn process_single_file(input: &str, options: &ProcessOptions) -> Result<ProcessR
         slimg_core::convert(&image, &pipeline_options).map_err(|e| e.to_string())?
     };
 
-    let output_dir = options.output_dir.as_deref().map(Path::new);
+    let output_dir = match (&options.save_to_mode, &options.output_dir) {
+        (Some(SaveToMode::Custom), Some(dir)) if !dir.is_empty() => Some(Path::new(dir.as_str())),
+        _ => None,
+    };
+
     let mut out_path = slimg_core::output_path(input_path, pipeline_result.format, output_dir);
 
-    if !options.overwrite && out_path.exists() {
-        out_path = find_unique_path(&out_path)?;
+    let on_output_exists = options.on_output_exists.as_ref().unwrap_or(&OnOutputExists::Rename);
+    match on_output_exists {
+        OnOutputExists::Skip => {
+            if out_path.exists() {
+                return Err("Output file exists, skipping".to_string());
+            }
+        }
+        OnOutputExists::Overwrite => {}
+        OnOutputExists::Rename => {
+            if out_path.exists() && !options.overwrite {
+                out_path = find_unique_path(&out_path)?;
+            }
+        }
     }
 
     pipeline_result
         .save(&out_path)
         .map_err(|e| e.to_string())?;
+
+    let delete_original = options.delete_original.unwrap_or(false);
+    if delete_original {
+        let mode = options.delete_original_mode.as_ref().unwrap_or(&DeleteOriginalMode::Trash);
+        match mode {
+            DeleteOriginalMode::Trash => {
+                #[cfg(target_os = "windows")]
+                {
+                    use std::process::Command;
+                    Command::new("powershell")
+                        .args(["-Command", &format!("Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('{}')", input_path.to_string_lossy().replace('\'', "''"))])
+                        .output()
+                        .ok();
+                }
+                #[cfg(not(target_os = "windows"))]
+                {
+                    use std::process::Command;
+                    Command::new("trash")
+                        .arg(input_path)
+                        .output()
+                        .ok();
+                }
+            }
+            DeleteOriginalMode::Permanent => {
+                let _ = std::fs::remove_file(input_path);
+            }
+        }
+    }
 
     Ok(ProcessResult {
         output_path: out_path.to_string_lossy().to_string(),

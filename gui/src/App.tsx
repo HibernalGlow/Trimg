@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useImageProcess } from "@/hooks/useImageProcess";
 import { useBatchProcess } from "@/hooks/useBatchProcess";
-import { useSettings } from "@/hooks/useSettings";
+import { useSettings, type SaveToMode, type OnOutputExists, type DeleteOriginalMode } from "@/hooks/useSettings";
 import { formatBytes } from "@/lib/format";
 import { basename, capitalize } from "@/lib/path";
 import { api, type ImageInfo, type ProcessOptions } from "@/lib/tauri";
@@ -60,8 +60,15 @@ function App() {
 
   const buildOptions = (): ProcessOptions => ({
     quality: settings.defaultQuality,
+    effort: settings.effort,
     threads: settings.threads,
     overwrite: settings.overwrite,
+    save_to_mode: settings.saveToMode,
+    keep_folder_structure: settings.keepFolderStructure,
+    on_output_exists: settings.onOutputExists,
+    clear_file_list: settings.clearFileList,
+    delete_original: settings.deleteOriginal,
+    delete_original_mode: settings.deleteOriginalMode,
     ...(settings.outputDir ? { output_dir: settings.outputDir } : {}),
     ...options,
     operation: activeFeature,
@@ -69,15 +76,22 @@ function App() {
 
   const handleProcess = async () => {
     if (files.length === 0) return;
+    const opts = buildOptions();
 
     if (isBatchMode) {
       setSelectedBatchIndex(undefined);
       await processBatch(
         files.map((f) => f.path),
-        buildOptions()
+        opts
       );
+      if (opts.clear_file_list) {
+        handleClearFiles();
+      }
     } else {
-      await processImage(files[0].path, buildOptions());
+      await processImage(files[0].path, opts);
+      if (opts.clear_file_list) {
+        handleClearFiles();
+      }
     }
   };
 
@@ -216,7 +230,15 @@ function App() {
                 processError={currentError}
                 defaultOverwrite={settings.overwrite}
                 defaultQuality={settings.defaultQuality}
+                defaultEffort={settings.effort}
                 defaultThreads={settings.threads}
+                saveToMode={settings.saveToMode}
+                outputDir={settings.outputDir}
+                keepFolderStructure={settings.keepFolderStructure}
+                onOutputExists={settings.onOutputExists}
+                clearFileList={settings.clearFileList}
+                deleteOriginal={settings.deleteOriginal}
+                deleteOriginalMode={settings.deleteOriginalMode}
                 onOptionsChange={mergeOptions}
                 onProcess={handleProcess}
               />
@@ -349,7 +371,15 @@ function FileListWithOptions({
   processError,
   defaultOverwrite,
   defaultQuality,
+  defaultEffort,
   defaultThreads,
+  saveToMode,
+  outputDir,
+  keepFolderStructure,
+  onOutputExists,
+  clearFileList,
+  deleteOriginal,
+  deleteOriginalMode,
   onOptionsChange,
   onProcess,
 }: {
@@ -360,7 +390,15 @@ function FileListWithOptions({
   processError: string | null;
   defaultOverwrite: boolean;
   defaultQuality: number;
+  defaultEffort: number;
   defaultThreads: number;
+  saveToMode: SaveToMode;
+  outputDir: string;
+  keepFolderStructure: boolean;
+  onOutputExists: OnOutputExists;
+  clearFileList: boolean;
+  deleteOriginal: boolean;
+  deleteOriginalMode: DeleteOriginalMode;
   onOptionsChange: (options: Partial<ProcessOptions>) => void;
   onProcess: () => void;
 }) {
@@ -398,7 +436,15 @@ function FileListWithOptions({
           feature={activeFeature}
           imageInfo={files[0]?.info}
           defaultQuality={defaultQuality}
+          defaultEffort={defaultEffort}
           defaultThreads={defaultThreads}
+          saveToMode={saveToMode}
+          outputDir={outputDir}
+          keepFolderStructure={keepFolderStructure}
+          onOutputExists={onOutputExists}
+          clearFileList={clearFileList}
+          deleteOriginal={deleteOriginal}
+          deleteOriginalMode={deleteOriginalMode}
           onChange={onOptionsChange}
         />
 
