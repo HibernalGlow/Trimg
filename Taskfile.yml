@@ -6,15 +6,28 @@ env:
 
 tasks:
   build:
-    desc: Build CLI and GUI (debug)
+    desc: Build CLI (debug)
     cmds:
       - cargo build --workspace
-      - cargo build --manifest-path gui/src-tauri/Cargo.toml
+
+  build-gui:
+    desc: Build GUI with embedded frontend (debug)
+    dir: gui
+    cmds:
+      - bun install
+      - bun tauri build --debug
 
   build-release:
-    desc: Build CLI and GUI (release, requires vcvars)
+    desc: Build CLI release
     cmds:
-      - scripts\\build-release.cmd
+      - cargo build --release --workspace
+
+  build-gui-release:
+    desc: Build GUI release with embedded frontend (requires vcvars)
+    dir: gui
+    cmds:
+      - bun install
+      - bun tauri build
 
   check:
     desc: Type-check all code without linking
