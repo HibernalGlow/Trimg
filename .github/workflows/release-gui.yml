@@ -20,10 +20,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: macos-latest
-            args: --target aarch64-apple-darwin
-          - platform: ubuntu-22.04
-            args: ''
+          # - platform: macos-latest
+          #   args: --target aarch64-apple-darwin
+          # - platform: ubuntu-22.04
+          #   args: ''
           - platform: windows-latest
             args: ''
 
@@ -43,24 +43,24 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
 
-      # ── Linux dependencies ──────────────────────────────────
-      - name: Install Linux dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libwebkit2gtk-4.1-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev \
-            patchelf \
-            cmake \
-            meson \
-            nasm
+      # ── Linux dependencies (已禁用) ─────────────────────────
+      # - name: Install Linux dependencies
+      #   if: runner.os == 'Linux'
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install -y \
+      #       libwebkit2gtk-4.1-dev \
+      #       libayatana-appindicator3-dev \
+      #       librsvg2-dev \
+      #       patchelf \
+      #       cmake \
+      #       meson \
+      #       nasm
 
-      # ── macOS dependencies ──────────────────────────────────
-      - name: Install macOS dependencies
-        if: runner.os == 'macOS'
-        run: brew install meson nasm
+      # ── macOS dependencies (已禁用) ─────────────────────────
+      # - name: Install macOS dependencies
+      #   if: runner.os == 'macOS'
+      #   run: brew install meson nasm
 
       # ── Windows dependencies ────────────────────────────────
       - name: Setup MSVC (Windows)
