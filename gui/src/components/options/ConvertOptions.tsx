@@ -3,7 +3,7 @@ import type { ProcessOptions } from "@/lib/tauri";
 import { FormatSelect } from "./FormatSelect";
 import { QualitySlider } from "./QualitySlider";
 
-const DEFAULT_FORMAT = "jpeg";
+const DEFAULT_FORMAT = "avif";
 
 interface ConvertOptionsProps {
   defaultQuality: number;

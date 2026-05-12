@@ -10,7 +10,7 @@ export interface AppSettings {
 
 const DEFAULT_SETTINGS: AppSettings = {
   outputDir: "",
-  defaultQuality: 80,
+  defaultQuality: 60,
   overwrite: false,
 };
 
