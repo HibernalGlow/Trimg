@@ -10,6 +10,7 @@ interface OptionsPanelProps {
   feature: Feature;
   imageInfo?: ImageInfo;
   defaultQuality: number;
+  defaultThreads: number;
   onChange: (options: Partial<ProcessOptions>) => void;
 }
 
@@ -17,11 +18,12 @@ export function OptionsPanel({
   feature,
   imageInfo,
   defaultQuality,
+  defaultThreads,
   onChange,
 }: OptionsPanelProps) {
   switch (feature) {
     case "convert":
-      return <ConvertOptions defaultQuality={defaultQuality} onChange={onChange} />;
+      return <ConvertOptions defaultQuality={defaultQuality} defaultThreads={defaultThreads} onChange={onChange} />;
     case "optimize":
       return <OptimizeOptions defaultQuality={defaultQuality} onChange={onChange} />;
     case "resize":

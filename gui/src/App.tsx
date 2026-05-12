@@ -216,6 +216,7 @@ function App() {
                 processError={currentError}
                 defaultOverwrite={settings.overwrite}
                 defaultQuality={settings.defaultQuality}
+                defaultThreads={settings.threads}
                 onOptionsChange={mergeOptions}
                 onProcess={handleProcess}
               />
@@ -348,6 +349,7 @@ function FileListWithOptions({
   processError,
   defaultOverwrite,
   defaultQuality,
+  defaultThreads,
   onOptionsChange,
   onProcess,
 }: {
@@ -358,6 +360,7 @@ function FileListWithOptions({
   processError: string | null;
   defaultOverwrite: boolean;
   defaultQuality: number;
+  defaultThreads: number;
   onOptionsChange: (options: Partial<ProcessOptions>) => void;
   onProcess: () => void;
 }) {
@@ -395,6 +398,7 @@ function FileListWithOptions({
           feature={activeFeature}
           imageInfo={files[0]?.info}
           defaultQuality={defaultQuality}
+          defaultThreads={defaultThreads}
           onChange={onOptionsChange}
         />
 

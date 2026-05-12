@@ -109,36 +109,6 @@ export function Settings({ settings, onUpdate, onReset }: SettingsProps) {
 
         <Separator />
 
-        <section className="space-y-4">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-            Performance
-          </h2>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="threads">Thread count</Label>
-              <span className="text-sm font-medium tabular-nums">
-                {settings.threads}
-              </span>
-            </div>
-            <Slider
-              id="threads"
-              value={[settings.threads]}
-              onValueChange={([value]) =>
-                onUpdate({ threads: value })
-              }
-              min={1}
-              max={16}
-              step={1}
-            />
-            <p className="text-xs text-muted-foreground">
-              Number of parallel processing threads (1 = single thread)
-            </p>
-          </div>
-        </section>
-
-        <Separator />
-
         <Button variant="outline" onClick={onReset} className="gap-2">
           <RotateCcw className="h-4 w-4" />
           Reset to defaults
