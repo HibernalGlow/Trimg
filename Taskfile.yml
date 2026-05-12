@@ -7,38 +7,40 @@ tasks:
   build:
     desc: Build CLI and GUI
     cmds:
-      - build_msvc.bat build
+      - cargo build --workspace
+      - cargo build --manifest-path gui/src-tauri/Cargo.toml
 
   check:
     desc: Type-check all code without linking
     cmds:
-      - build_msvc.bat check
+      - cargo check --workspace
+      - cargo check --manifest-path gui/src-tauri/Cargo.toml
 
   test:
     desc: Run all tests
     cmds:
-      - build_msvc.bat test
-
-  all:
-    desc: Full CI pass (build + test)
-    cmds:
-      - build_msvc.bat all
+      - cargo test --workspace
+      - cargo test --manifest-path gui/src-tauri/Cargo.toml
 
   dev:
     desc: Start Tauri dev server (GUI hot-reload)
     cmds:
       - bun install --cwd gui
-      - cmd /c dev.cmd
+      - cd gui && bun tauri dev
 
   dev-frontend:
     desc: Start Vite dev server only (no Rust backend)
-    dir: gui
     cmds:
-      - bun install
-      - bun dev
+      - bun install --cwd gui
+      - cd gui && bun dev
 
   clean:
     desc: Remove build artifacts
     cmds:
       - cargo clean
       - powershell -Command 'Remove-Item -Recurse -Force gui/src-tauri/target -ErrorAction SilentlyContinue'
+
+  setup:
+    desc: One-time MSVC PATH setup (run once after clone)
+    cmds:
+      - powershell -File scripts/setup.ps1
