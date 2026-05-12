@@ -1,68 +1,44 @@
 version: "3"
 
 env:
-  SYSTEM_DEPS_DAV1D_BUILD_INTERNAL: always
+  CARGO_TERM_COLOR: always
 
 tasks:
   build:
     desc: Build CLI and GUI
     cmds:
-      - cargo build --workspace
-      - cargo build --manifest-path gui/src-tauri/Cargo.toml
+      - build_msvc.bat build
 
-  build-cli:
-    desc: Build CLI only
+  check:
+    desc: Type-check all code without linking
     cmds:
-      - cargo build --workspace
-
-  build-gui:
-    desc: Build GUI only
-    cmds:
-      - cargo build --manifest-path gui/src-tauri/Cargo.toml
-
-  build-release:
-    desc: Release build (CLI + GUI)
-    cmds:
-      - cargo build --workspace --release
-      - cargo build --manifest-path gui/src-tauri/Cargo.toml --release
+      - build_msvc.bat check
 
   test:
     desc: Run all tests
     cmds:
-      - cargo test --workspace
+      - build_msvc.bat test
 
-  test-core:
-    desc: Run core library tests only
+  all:
+    desc: Full CI pass (build + test)
     cmds:
-      - cargo test -p slimg-core
+      - build_msvc.bat all
 
   dev:
     desc: Start Tauri dev server (GUI hot-reload)
-    dir: gui
     cmds:
-      - pnpm install
-      - pnpm tauri dev
+      - bun install --cwd gui
+      - cmd /c dev.cmd
 
   dev-frontend:
     desc: Start Vite dev server only (no Rust backend)
     dir: gui
     cmds:
-      - pnpm install
-      - pnpm dev
-
-  check:
-    desc: Type-check all code without building binaries
-    cmds:
-      - cargo check --workspace
-      - cargo check --manifest-path gui/src-tauri/Cargo.toml
+      - bun install
+      - bun dev
 
   clean:
     desc: Remove build artifacts
     cmds:
       - cargo clean
-
-  all:
-    desc: Clean, build, test — full CI pass
-    cmds:
-      - task: build
-      - task: test
+      - powershell -Command 'Remove-Item -Recurse -Force gui/src-tauri/target -ErrorAction SilentlyContinue'
