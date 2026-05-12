@@ -68,7 +68,7 @@ export function ConvertOptions({
       on_output_exists: currentOnOutputExists,
       clear_file_list: currentClearFileList,
       delete_original: currentDeleteOriginal,
-      delete_original_mode: currentDeleteOriginal,
+      delete_original_mode: currentDeleteOriginalMode,
     });
   }, [
     onChange,
