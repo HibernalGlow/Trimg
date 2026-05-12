@@ -29,3 +29,7 @@ base64 = "0.22"
 rayon = "1"
 slimg-core = { path = "../../crates/slimg-core" }
 
+[[bin]]
+name = "trimg-gui"
+path = "src/main.rs"
+
