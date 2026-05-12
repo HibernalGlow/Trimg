@@ -63,7 +63,8 @@ export interface BatchProgress {
 
 export const api = {
   scanDirectory: (path: string) => invoke<string[]>("scan_directory", { path }),
-  loadImage: (path: string) => invoke<ImageInfo>("load_image", { path }),
+  loadImage: (path: string, skipThumbnail?: boolean) =>
+    invoke<ImageInfo>("load_image", { path, skipThumbnail }),
   processImage: (input: string, options: ProcessOptions) =>
     invoke<ProcessResult>("process_image", { input, options }),
   previewImage: (input: string, options: ProcessOptions) =>

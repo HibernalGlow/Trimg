@@ -5,6 +5,8 @@ import {
   Maximize2,
   Settings,
   Zap,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -27,11 +29,19 @@ const features: FeatureItem[] = [
 
 interface SidebarProps {
   active: Feature;
+  showThumbnails: boolean;
   onSelect: (feature: Feature) => void;
   onSettingsClick: () => void;
+  onToggleThumbnails: () => void;
 }
 
-export function Sidebar({ active, onSelect, onSettingsClick }: SidebarProps) {
+export function Sidebar({
+  active,
+  showThumbnails,
+  onSelect,
+  onSettingsClick,
+  onToggleThumbnails,
+}: SidebarProps) {
   return (
     <aside className="flex h-screen w-50 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
       <div className="flex h-14 items-center px-4 border-b border-sidebar-border">
@@ -56,7 +66,18 @@ export function Sidebar({ active, onSelect, onSettingsClick }: SidebarProps) {
         ))}
       </nav>
 
-      <div className="border-t border-sidebar-border p-2">
+      <div className="border-t border-sidebar-border p-2 space-y-1">
+        <button
+          onClick={onToggleThumbnails}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        >
+          {showThumbnails ? (
+            <Eye className="h-5 w-5 shrink-0" />
+          ) : (
+            <EyeOff className="h-5 w-5 shrink-0" />
+          )}
+          {showThumbnails ? "Show Images" : "Hide Images"}
+        </button>
         <button
           onClick={onSettingsClick}
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"

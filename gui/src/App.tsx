@@ -100,13 +100,14 @@ function App() {
     setLoading(true);
     setError(null);
     try {
+      const skipThumbnail = !settings.showThumbnails;
       const loaded: LoadedFile[] = [];
       for (let i = 0; i < paths.length; i += CONCURRENCY) {
         const chunk = paths.slice(i, i + CONCURRENCY);
         const results = await Promise.all(
           chunk.map(async (path) => ({
             path,
-            info: await api.loadImage(path),
+            info: await api.loadImage(path, skipThumbnail),
           }))
         );
         loaded.push(...results);
@@ -119,7 +120,7 @@ function App() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [settings.showThumbnails]);
 
   const handleClearFiles = () => {
     setFiles([]);
@@ -146,6 +147,7 @@ function App() {
     <div className="flex h-screen bg-background text-foreground">
       <Sidebar
         active={activeFeature}
+        showThumbnails={settings.showThumbnails}
         onSelect={(feature) => {
           setActiveFeature(feature);
           setShowSettings(false);
@@ -155,6 +157,7 @@ function App() {
           setSelectedBatchIndex(undefined);
         }}
         onSettingsClick={() => setShowSettings(true)}
+        onToggleThumbnails={() => updateSettings({ showThumbnails: !settings.showThumbnails })}
       />
       <main className="flex-1 overflow-auto p-6">
         {showSettings ? (
@@ -411,11 +414,20 @@ function FileListWithOptions({
             className="overflow-hidden rounded-xl border bg-card"
           >
             <div className="flex aspect-video items-center justify-center bg-muted">
-              <img
-                src={`data:image/png;base64,${file.info.thumbnail_base64}`}
-                alt={basename(file.path)}
-                className="max-h-full max-w-full object-contain"
-              />
+              {file.info.thumbnail_base64 ? (
+                <img
+                  src={`data:image/png;base64,${file.info.thumbnail_base64}`}
+                  alt={basename(file.path)}
+                  className="max-h-full max-w-full object-contain"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center gap-2 p-4 text-center">
+                  <span className="text-2xl">📷</span>
+                  <span className="text-xs text-muted-foreground truncate max-w-full">
+                    {basename(file.path)}
+                  </span>
+                </div>
+              )}
             </div>
             <div className="p-4">
               <p className="truncate text-sm font-medium">

@@ -17,6 +17,7 @@ export interface AppSettings {
   clearFileList: boolean;
   deleteOriginal: boolean;
   deleteOriginalMode: DeleteOriginalMode;
+  showThumbnails: boolean;
   overwrite: boolean;
 }
 
@@ -31,6 +32,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   clearFileList: false,
   deleteOriginal: false,
   deleteOriginalMode: "trash",
+  showThumbnails: true,
   overwrite: false,
 };
 
