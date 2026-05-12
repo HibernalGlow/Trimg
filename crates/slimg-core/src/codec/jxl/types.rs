@@ -2,14 +2,16 @@
 pub(crate) struct EncodeConfig {
     pub lossless: bool,
     pub distance: f32,
+    pub effort: u8,
 }
 
 impl EncodeConfig {
-    pub fn from_quality(quality: u8) -> Self {
+    pub fn from_quality(quality: u8, effort: u8) -> Self {
         if quality >= 100 {
             return Self {
                 lossless: true,
                 distance: 0.0,
+                effort,
             };
         }
         let distance =
@@ -17,6 +19,7 @@ impl EncodeConfig {
         Self {
             lossless: false,
             distance,
+            effort,
         }
     }
 }

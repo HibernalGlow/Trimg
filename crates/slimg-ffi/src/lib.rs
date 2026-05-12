@@ -160,6 +160,8 @@ pub struct PipelineOptions {
     pub format: Format,
     /// Encoding quality (0-100).
     pub quality: u8,
+    /// Encoding effort (1-10). Higher = more CPU time, better compression.
+    pub effort: u8,
     /// Optional resize to apply before encoding.
     pub resize: Option<ResizeMode>,
     /// Optional crop to apply before encoding.
@@ -303,6 +305,7 @@ fn convert(image: &ImageData, options: &PipelineOptions) -> Result<PipelineResul
     let core_options = slimg_core::PipelineOptions {
         format: options.format.to_core(),
         quality: options.quality,
+        effort: options.effort,
         resize: options.resize.as_ref().map(|r| r.to_core()),
         crop: options.crop.as_ref().map(|c| c.to_core()),
         extend: options.extend.as_ref().map(|e| e.to_core()),
@@ -338,10 +341,10 @@ fn resize(image: &ImageData, mode: &ResizeMode) -> Result<ImageData, SlimgError>
     Ok(ImageData::from_core(result))
 }
 
-/// Decode the data and re-encode in the same format at the given quality.
+/// Decode the data and re-encode in the same format at the given quality and effort.
 #[uniffi::export]
-fn optimize(data: Vec<u8>, quality: u8) -> Result<PipelineResult, SlimgError> {
-    let result = slimg_core::optimize(&data, quality)?;
+fn optimize(data: Vec<u8>, quality: u8, effort: u8) -> Result<PipelineResult, SlimgError> {
+    let result = slimg_core::optimize(&data, quality, effort)?;
     Ok(PipelineResult {
         data: result.data,
         format: Format::from_core(result.format),

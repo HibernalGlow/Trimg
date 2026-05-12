@@ -15,6 +15,9 @@ pub struct PipelineOptions {
     pub format: Format,
     /// Encoding quality (0..=100).
     pub quality: u8,
+    /// Encoding effort (1..=10). Higher = more CPU time, better compression.
+    /// Default: 7.
+    pub effort: u8,
     /// Optional resize to apply before encoding.
     pub resize: Option<ResizeMode>,
     /// Optional crop to apply before encoding.
@@ -91,6 +94,7 @@ pub fn convert(image: &ImageData, options: &PipelineOptions) -> Result<PipelineR
     let codec = get_codec(options.format);
     let encode_opts = EncodeOptions {
         quality: options.quality,
+        effort: options.effort,
     };
     let data = codec.encode(&image, &encode_opts)?;
 
@@ -102,8 +106,8 @@ pub fn convert(image: &ImageData, options: &PipelineOptions) -> Result<PipelineR
     })
 }
 
-/// Decode the data and re-encode in the same format at the given quality.
-pub fn optimize(data: &[u8], quality: u8) -> Result<PipelineResult> {
+/// Decode the data and re-encode in the same format at the given quality and effort.
+pub fn optimize(data: &[u8], quality: u8, effort: u8) -> Result<PipelineResult> {
     let (image, format) = decode(data)?;
 
     if !format.can_encode() {
@@ -111,7 +115,7 @@ pub fn optimize(data: &[u8], quality: u8) -> Result<PipelineResult> {
     }
 
     let codec = get_codec(format);
-    let encode_opts = EncodeOptions { quality };
+    let encode_opts = EncodeOptions { quality, effort };
     let encoded = codec.encode(&image, &encode_opts)?;
 
     Ok(PipelineResult {
@@ -167,6 +171,7 @@ mod tests {
         let options = PipelineOptions {
             format: Format::Jxl,
             quality: 80,
+            effort: 7,
             resize: None,
             crop: None,
             extend: None,

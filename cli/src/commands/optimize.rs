@@ -15,6 +15,10 @@ pub struct OptimizeArgs {
     #[arg(short, long, default_value_t = 80)]
     pub quality: u8,
 
+    /// Encoding effort (1-10). Higher = more CPU time, better compression. Default: 7
+    #[arg(short = 'e', long, default_value_t = 7)]
+    pub effort: u8,
+
     /// Output path (file or directory)
     #[arg(short, long)]
     pub output: Option<PathBuf>,
@@ -49,7 +53,7 @@ pub fn run(args: OptimizeArgs) -> anyhow::Result<()> {
             let original_data = std::fs::read(file)?;
             let original_size = original_data.len() as u64;
 
-            let result = optimize(&original_data, args.quality)?;
+            let result = optimize(&original_data, args.quality, args.effort)?;
             let new_size = result.data.len() as u64;
 
             let out = if args.overwrite {

@@ -41,6 +41,7 @@ pub struct ProcessOptions {
     pub operation: Operation,
     pub format: Option<String>,
     pub quality: u8,
+    pub effort: Option<u8>,
     pub width: Option<u32>,
     pub height: Option<u32>,
     pub x: Option<u32>,
@@ -162,8 +163,9 @@ pub async fn preview_image(input: String, options: ProcessOptions) -> Result<Pre
         let raw_bytes = std::fs::read(input_path).map_err(|e| e.to_string())?;
         let (image, source_format) = slimg_core::decode(&raw_bytes).map_err(|e| e.to_string())?;
 
+        let effort = options.effort.unwrap_or(7);
         let pipeline_result = if matches!(options.operation, Operation::Optimize) {
-            slimg_core::optimize(&raw_bytes, options.quality).map_err(|e| e.to_string())?
+            slimg_core::optimize(&raw_bytes, options.quality, effort).map_err(|e| e.to_string())?
         } else {
             let pipeline_options = build_pipeline_options(&options, source_format)?;
             slimg_core::convert(&image, &pipeline_options).map_err(|e| e.to_string())?
@@ -189,9 +191,16 @@ pub async fn process_batch(
     options: ProcessOptions,
     window: tauri::Window,
 ) -> Result<(), String> {
-    let total = inputs.len();
+    use rayon::prelude::*;
+    use std::sync::Mutex;
 
-    for (index, file_path) in inputs.iter().enumerate() {
+    let total = inputs.len();
+    let results: Mutex<Vec<BatchProgress>> = Mutex::new(Vec::with_capacity(total));
+
+    let window = &window;
+    let options = &options;
+
+    inputs.par_iter().enumerate().for_each(|(index, file_path)| {
         let progress_processing = BatchProgress {
             index,
             total,
@@ -202,37 +211,33 @@ pub async fn process_batch(
         };
         let _ = window.emit("batch-progress", &progress_processing);
 
-        let fp = file_path.clone();
-        let opts = options.clone();
-        let result = tauri::async_runtime::spawn_blocking(move || process_single_file(&fp, &opts))
-            .await
-            .map_err(|e| format!("Task failed: {}", e))?;
+        let result = process_single_file(file_path, options);
 
-        match result {
-            Ok(result) => {
-                let progress_completed = BatchProgress {
-                    index,
-                    total,
-                    file_path: file_path.clone(),
-                    status: "completed".to_string(),
-                    result: Some(result),
-                    error: None,
-                };
-                let _ = window.emit("batch-progress", &progress_completed);
-            }
-            Err(err) => {
-                let progress_error = BatchProgress {
-                    index,
-                    total,
-                    file_path: file_path.clone(),
-                    status: "error".to_string(),
-                    result: None,
-                    error: Some(err),
-                };
-                let _ = window.emit("batch-progress", &progress_error);
-            }
+        let progress = match result {
+            Ok(result) => BatchProgress {
+                index,
+                total,
+                file_path: file_path.clone(),
+                status: "completed".to_string(),
+                result: Some(result),
+                error: None,
+            },
+            Err(err) => BatchProgress {
+                index,
+                total,
+                file_path: file_path.clone(),
+                status: "error".to_string(),
+                result: None,
+                error: Some(err),
+            },
+        };
+
+        let _ = window.emit("batch-progress", &progress);
+
+        if let Ok(mut results) = results.lock() {
+            results.push(progress);
         }
-    }
+    });
 
     Ok(())
 }
@@ -247,8 +252,9 @@ fn process_single_file(input: &str, options: &ProcessOptions) -> Result<ProcessR
 
     let (image, source_format) = slimg_core::decode(&raw_bytes).map_err(|e| e.to_string())?;
 
+    let effort = options.effort.unwrap_or(7);
     let pipeline_result = if matches!(options.operation, Operation::Optimize) {
-        slimg_core::optimize(&raw_bytes, options.quality).map_err(|e| e.to_string())?
+        slimg_core::optimize(&raw_bytes, options.quality, effort).map_err(|e| e.to_string())?
     } else {
         let pipeline_options = build_pipeline_options(options, source_format)?;
         slimg_core::convert(&image, &pipeline_options).map_err(|e| e.to_string())?
@@ -334,6 +340,7 @@ fn build_pipeline_options(
     Ok(PipelineOptions {
         format,
         quality: options.quality,
+        effort: options.effort.unwrap_or(7),
         resize,
         crop,
         extend,

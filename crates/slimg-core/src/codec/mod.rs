@@ -53,11 +53,18 @@ impl ImageData {
 pub struct EncodeOptions {
     /// Quality value in the range 0..=100.
     pub quality: u8,
+    /// Encoding effort (1..=10). Higher = more CPU time, better compression.
+    /// Interpretation is codec-specific: JXL effort, AVIF speed (higher = faster),
+    /// WebP method. Default: 7.
+    pub effort: u8,
 }
 
 impl Default for EncodeOptions {
     fn default() -> Self {
-        Self { quality: 80 }
+        Self {
+            quality: 80,
+            effort: 7,
+        }
     }
 }
 
@@ -103,6 +110,7 @@ mod tests {
     fn encode_options_default() {
         let opts = EncodeOptions::default();
         assert_eq!(opts.quality, 80);
+        assert_eq!(opts.effort, 7);
     }
 
     #[test]

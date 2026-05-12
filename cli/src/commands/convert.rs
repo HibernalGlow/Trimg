@@ -22,6 +22,10 @@ pub struct ConvertArgs {
     #[arg(short, long, default_value_t = 80)]
     pub quality: u8,
 
+    /// Encoding effort (1-10). Higher = more CPU time, better compression. Default: 7
+    #[arg(short = 'e', long, default_value_t = 7)]
+    pub effort: u8,
+
     /// Output path (file or directory)
     #[arg(short, long)]
     pub output: Option<PathBuf>,
@@ -48,6 +52,7 @@ pub fn run(args: ConvertArgs) -> anyhow::Result<()> {
     let options = PipelineOptions {
         format: target_format,
         quality: args.quality,
+        effort: args.effort,
         resize: None,
         crop: None,
         extend: None,

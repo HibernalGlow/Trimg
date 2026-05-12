@@ -35,7 +35,7 @@ fn decodable_formats() -> Vec<Format> {
 fn bench_encode(c: &mut Criterion) {
     let image = generate_test_image(BENCH_IMAGE_SIZE, BENCH_IMAGE_SIZE);
     let pixel_count = (BENCH_IMAGE_SIZE as u64) * (BENCH_IMAGE_SIZE as u64);
-    let options = EncodeOptions { quality: 80 };
+    let options = EncodeOptions { quality: 80, effort: 7 };
 
     let mut group = c.benchmark_group("encode");
     group.throughput(Throughput::Elements(pixel_count));
@@ -55,7 +55,7 @@ fn bench_encode(c: &mut Criterion) {
 
 fn bench_decode(c: &mut Criterion) {
     let image = generate_test_image(BENCH_IMAGE_SIZE, BENCH_IMAGE_SIZE);
-    let options = EncodeOptions { quality: 80 };
+    let options = EncodeOptions { quality: 80, effort: 7 };
 
     let mut group = c.benchmark_group("decode");
 

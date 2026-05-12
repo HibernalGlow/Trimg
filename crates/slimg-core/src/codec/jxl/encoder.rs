@@ -92,6 +92,17 @@ impl Encoder {
         settings: *mut JxlEncoderFrameSettings,
         config: &EncodeConfig,
     ) -> Result<()> {
+        unsafe {
+            check_status(
+                JxlEncoderFrameSettingsSetOption(
+                    settings,
+                    JxlEncoderFrameSettingId_JXL_ENC_FRAME_SETTING_EFFORT,
+                    config.effort as i64,
+                ),
+                "set effort",
+            )?;
+        }
+
         if config.lossless {
             unsafe {
                 check_status(

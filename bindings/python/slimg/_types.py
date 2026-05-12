@@ -292,6 +292,13 @@ def _validate_quality(quality: int) -> int:
     return quality
 
 
+def _validate_effort(effort: int) -> int:
+    """Ensure effort is in 1-10."""
+    if not isinstance(effort, int) or not (1 <= effort <= 10):
+        raise ValueError(f"effort must be an integer in 1-10, got {effort!r}")
+    return effort
+
+
 def _resolve_fill(
     fill: Union[None, str, Tuple[int, int, int], Tuple[int, int, int, int]],
 ) -> _lowlevel.FillColor:
@@ -345,6 +352,7 @@ def convert(
     format: Union[Format, str],
     quality: int = 80,
     *,
+    effort: int = 7,
     resize=None,
     crop=None,
     extend=None,
@@ -356,6 +364,9 @@ def convert(
     *format* may be a ``Format`` enum member or a string such as
     ``'png'``, ``'webp'``, ``'jpg'``, etc.
 
+    *effort* controls the encoding speed/compression trade-off (1-10,
+    higher = slower encoding but better compression).  Default: 7.
+
     *resize*, *crop*, *extend* accept values returned by the
     ``Resize``, ``Crop``, ``Extend`` helper classes respectively.
 
@@ -363,6 +374,7 @@ def convert(
     ``(r, g, b, a)``.  Defaults to transparent when *extend* is set.
     """
     _validate_quality(quality)
+    _validate_effort(effort)
     fmt = Format._resolve(format)
     fill_color = None
     if fill is not None or extend is not None:
@@ -371,6 +383,7 @@ def convert(
     opts = _lowlevel.PipelineOptions(
         format=fmt._to_lowlevel(),
         quality=quality,
+        effort=effort,
         resize=resize,
         crop=crop,
         extend=extend,
@@ -477,22 +490,31 @@ def resize_image(
     return Image._from_lowlevel(result, image.format)
 
 
-def optimize(data: bytes, quality: int = 80) -> Result:
-    """Re-encode *data* at the given *quality* in the same format."""
+def optimize(data: bytes, quality: int = 80, *, effort: int = 7) -> Result:
+    """Re-encode *data* at the given *quality* in the same format.
+
+    *effort* controls the encoding speed/compression trade-off (1-10,
+    higher = slower encoding but better compression).  Default: 7.
+    """
     _validate_quality(quality)
-    result = _lowlevel.optimize(data, quality)
+    _validate_effort(effort)
+    result = _lowlevel.optimize(data, quality, effort)
     return Result(data=result.data, format=Format._from_lowlevel(result.format))
 
 
-def optimize_file(path: str, quality: int = 80) -> Result:
+def optimize_file(path: str, quality: int = 80, *, effort: int = 7) -> Result:
     """Read a file from *path* and re-encode at the given *quality*.
+
+    *effort* controls the encoding speed/compression trade-off (1-10,
+    higher = slower encoding but better compression).  Default: 7.
 
     Raises ``SlimgError`` if the file cannot be read or optimised.
     """
     _validate_quality(quality)
+    _validate_effort(effort)
     try:
         with _builtin_open(path, "rb") as f:
             data = f.read()
     except OSError as exc:
         raise _lowlevel.SlimgError.Io(str(exc)) from exc
-    return optimize(data, quality)
+    return optimize(data, quality, effort=effort)
