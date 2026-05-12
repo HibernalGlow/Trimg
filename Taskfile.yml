@@ -1,0 +1,68 @@
+version: "3"
+
+env:
+  SYSTEM_DEPS_DAV1D_BUILD_INTERNAL: always
+
+tasks:
+  build:
+    desc: Build CLI and GUI
+    cmds:
+      - cargo build --workspace
+      - cargo build --manifest-path gui/src-tauri/Cargo.toml
+
+  build-cli:
+    desc: Build CLI only
+    cmds:
+      - cargo build --workspace
+
+  build-gui:
+    desc: Build GUI only
+    cmds:
+      - cargo build --manifest-path gui/src-tauri/Cargo.toml
+
+  build-release:
+    desc: Release build (CLI + GUI)
+    cmds:
+      - cargo build --workspace --release
+      - cargo build --manifest-path gui/src-tauri/Cargo.toml --release
+
+  test:
+    desc: Run all tests
+    cmds:
+      - cargo test --workspace
+
+  test-core:
+    desc: Run core library tests only
+    cmds:
+      - cargo test -p slimg-core
+
+  dev:
+    desc: Start Tauri dev server (GUI hot-reload)
+    dir: gui
+    cmds:
+      - pnpm install
+      - pnpm tauri dev
+
+  dev-frontend:
+    desc: Start Vite dev server only (no Rust backend)
+    dir: gui
+    cmds:
+      - pnpm install
+      - pnpm dev
+
+  check:
+    desc: Type-check all code without building binaries
+    cmds:
+      - cargo check --workspace
+      - cargo check --manifest-path gui/src-tauri/Cargo.toml
+
+  clean:
+    desc: Remove build artifacts
+    cmds:
+      - cargo clean
+
+  all:
+    desc: Clean, build, test — full CI pass
+    cmds:
+      - task: build
+      - task: test
