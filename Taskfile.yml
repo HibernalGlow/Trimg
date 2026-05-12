@@ -2,6 +2,7 @@ version: "3"
 
 env:
   CARGO_TERM_COLOR: always
+  LIBJXL_SYS_DIR: "D:/1VSCODE/Projects/ImageAll/Trimg/target/libjxl-prebuilt"
 
 tasks:
   build:
@@ -29,15 +30,17 @@ tasks:
 
   dev:
     desc: Start Tauri dev server (GUI hot-reload)
+    dir: gui
     cmds:
-      - bun install --cwd gui
-      - cd gui && bun tauri dev
+      - bun install
+      - bun tauri dev
 
   dev-frontend:
     desc: Start Vite dev server only (no Rust backend)
+    dir: gui
     cmds:
-      - bun install --cwd gui
-      - cd gui && bun dev
+      - bun install
+      - bun dev
 
   clean:
     desc: Remove build artifacts
@@ -49,7 +52,7 @@ tasks:
     desc: One-time MSVC PATH setup (run once after clone)
     cmds:
       - powershell -File scripts/setup.ps1
-更新
+
   gui:version:
     desc: Show current GUI version
     cmds:
