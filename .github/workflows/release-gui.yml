@@ -112,8 +112,8 @@ jobs:
           projectPath: gui
           tauriScript: bun run tauri
           args: ${{ matrix.args }}
-          tagName: ${{ github.ref_type == 'tag' && 'gui-v__VERSION__' || '' }}
-          releaseName: ${{ github.ref_type == 'tag' && 'slimg GUI v__VERSION__' || '' }}
+          tagName: gui-v__VERSION__
+          releaseName: 'slimg GUI v__VERSION__'
           releaseBody: 'Download the installer for your platform below.'
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false

@@ -1,12 +1,9 @@
 @echo off
-:: Run this from File Explorer or cmd.exe to build release binaries.
-:: Git Bash interferes because /usr/bin/link.exe shadows MSVC link.exe.
-set MSVC_BIN=C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64
-set PATH=%MSVC_BIN%;%PATH%
-set LIBJXL_SYS_DIR=%~dp0..\target\libjxl-prebuilt
-set SYSTEM_DEPS_DAV1D_BUILD_INTERNAL=always
-
+call "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
 cd /d "%~dp0.."
+
+set LIBJXL_SYS_DIR=%~dp0..\target\libjxl-prebuilt
+
 echo === Building CLI (release) ===
 cargo build --workspace --release
 if %errorlevel% neq 0 goto :fail
@@ -17,9 +14,8 @@ if %errorlevel% neq 0 goto :fail
 
 echo.
 echo === Done ===
-dir /b target\release\trimg.exe 2>nul
-dir /b gui\src-tauri\target\release\trimg-gui.exe 2>nul
-pause
+dir target\release\trimg.exe 2>nul
+dir gui\src-tauri\target\release\trimg-gui.exe 2>nul
 exit /b 0
 
 :fail
