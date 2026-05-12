@@ -60,6 +60,7 @@ function App() {
 
   const buildOptions = (): ProcessOptions => ({
     quality: settings.defaultQuality,
+    threads: settings.threads,
     overwrite: settings.overwrite,
     ...(settings.outputDir ? { output_dir: settings.outputDir } : {}),
     ...options,

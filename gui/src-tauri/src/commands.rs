@@ -42,6 +42,7 @@ pub struct ProcessOptions {
     pub format: Option<String>,
     pub quality: u8,
     pub effort: Option<u8>,
+    pub threads: Option<usize>,
     pub width: Option<u32>,
     pub height: Option<u32>,
     pub x: Option<u32>,
@@ -199,44 +200,52 @@ pub async fn process_batch(
 
     let window = &window;
     let options = &options;
+    let threads = options.threads.unwrap_or(1).max(1);
 
-    inputs.par_iter().enumerate().for_each(|(index, file_path)| {
-        let progress_processing = BatchProgress {
-            index,
-            total,
-            file_path: file_path.clone(),
-            status: "processing".to_string(),
-            result: None,
-            error: None,
-        };
-        let _ = window.emit("batch-progress", &progress_processing);
+    let pool = rayon::ThreadPoolBuilder::new()
+        .num_threads(threads)
+        .build()
+        .map_err(|e| e.to_string())?;
 
-        let result = process_single_file(file_path, options);
-
-        let progress = match result {
-            Ok(result) => BatchProgress {
+    pool.install(|| {
+        inputs.par_iter().enumerate().for_each(|(index, file_path)| {
+            let progress_processing = BatchProgress {
                 index,
                 total,
                 file_path: file_path.clone(),
-                status: "completed".to_string(),
-                result: Some(result),
-                error: None,
-            },
-            Err(err) => BatchProgress {
-                index,
-                total,
-                file_path: file_path.clone(),
-                status: "error".to_string(),
+                status: "processing".to_string(),
                 result: None,
-                error: Some(err),
-            },
-        };
+                error: None,
+            };
+            let _ = window.emit("batch-progress", &progress_processing);
 
-        let _ = window.emit("batch-progress", &progress);
+            let result = process_single_file(file_path, options);
 
-        if let Ok(mut results) = results.lock() {
-            results.push(progress);
-        }
+            let progress = match result {
+                Ok(result) => BatchProgress {
+                    index,
+                    total,
+                    file_path: file_path.clone(),
+                    status: "completed".to_string(),
+                    result: Some(result),
+                    error: None,
+                },
+                Err(err) => BatchProgress {
+                    index,
+                    total,
+                    file_path: file_path.clone(),
+                    status: "error".to_string(),
+                    result: None,
+                    error: Some(err),
+                },
+            };
+
+            let _ = window.emit("batch-progress", &progress);
+
+            if let Ok(mut results) = results.lock() {
+                results.push(progress);
+            }
+        });
     });
 
     Ok(())

@@ -5,12 +5,14 @@ const STORAGE_KEY = "slimg-settings";
 export interface AppSettings {
   outputDir: string;
   defaultQuality: number;
+  threads: number;
   overwrite: boolean;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
   outputDir: "",
   defaultQuality: 60,
+  threads: 1,
   overwrite: false,
 };
 

@@ -12,6 +12,7 @@ export interface ProcessOptions {
   operation: "convert" | "optimize" | "resize" | "crop" | "extend";
   format?: string;
   quality: number;
+  threads: number;
   width?: number;
   height?: number;
   x?: number;
