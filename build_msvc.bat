@@ -3,8 +3,13 @@ call "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliar
 cd /d "%~dp0"
 set SYSTEM_DEPS_DAV1D_BUILD_INTERNAL=always
 
-echo === Building workspace ===
+echo === Building CLI ===
 cargo build --workspace
+if %errorlevel% neq 0 goto :error
+
+echo.
+echo === Building GUI ===
+cargo build --manifest-path gui/src-tauri/Cargo.toml
 if %errorlevel% neq 0 goto :error
 
 echo.

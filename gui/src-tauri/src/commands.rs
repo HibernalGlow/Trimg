@@ -380,6 +380,7 @@ fn encode_as_png(image: &ImageData) -> Result<Vec<u8>, String> {
     let codec = get_codec(Format::Png);
     let opts = EncodeOptions {
         quality: THUMBNAIL_PNG_COMPRESSION,
+        effort: 7,
     };
     codec.encode(image, &opts).map_err(|e| e.to_string())
 }
