@@ -23,7 +23,7 @@ pub struct ImageInfo {
     pub height: u32,
     pub format: String,
     pub size_bytes: u64,
-    pub thumbnail_base64: Option<String>,
+    pub thumbnail_base64: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -142,8 +142,7 @@ fn collect_images(dir: &Path, out: &mut Vec<String>) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn load_image(path: String, generate_thumbnail: Option<bool>) -> Result<ImageInfo, String> {
-    let gen_thumb = generate_thumbnail.unwrap_or(true);
+pub async fn load_image(path: String) -> Result<ImageInfo, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let file_path = Path::new(&path);
 
@@ -157,18 +156,14 @@ pub async fn load_image(path: String, generate_thumbnail: Option<bool>) -> Resul
 
         let (image, format) = slimg_core::decode(&raw_bytes).map_err(|e| e.to_string())?;
 
-        let thumbnail_base64 = if gen_thumb {
-            let thumbnail = slimg_core::resize::resize(
-                &image,
-                &ResizeMode::Fit(THUMBNAIL_MAX_DIMENSION, THUMBNAIL_MAX_DIMENSION),
-            )
-            .map_err(|e| e.to_string())?;
+        let thumbnail = slimg_core::resize::resize(
+            &image,
+            &ResizeMode::Fit(THUMBNAIL_MAX_DIMENSION, THUMBNAIL_MAX_DIMENSION),
+        )
+        .map_err(|e| e.to_string())?;
 
-            let png_bytes = encode_as_png(&thumbnail)?;
-            Some(BASE64.encode(&png_bytes))
-        } else {
-            None
-        };
+        let png_bytes = encode_as_png(&thumbnail)?;
+        let thumbnail_base64 = BASE64.encode(&png_bytes);
 
         Ok(ImageInfo {
             width: image.width,

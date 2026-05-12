@@ -5,7 +5,7 @@ export interface ImageInfo {
   height: number;
   format: string;
   size_bytes: number;
-  thumbnail_base64?: string;
+  thumbnail_base64: string;
 }
 
 export type SaveToMode = "source" | "custom";
@@ -18,7 +18,6 @@ export interface ProcessOptions {
   quality: number;
   effort?: number;
   threads?: number;
-  lossless?: boolean;
   width?: number;
   height?: number;
   x?: number;
@@ -33,7 +32,6 @@ export interface ProcessOptions {
   clear_file_list?: boolean;
   delete_original?: boolean;
   delete_original_mode?: DeleteOriginalMode;
-  keep_timestamps?: boolean;
   overwrite: boolean;
 }
 
@@ -65,8 +63,7 @@ export interface BatchProgress {
 
 export const api = {
   scanDirectory: (path: string) => invoke<string[]>("scan_directory", { path }),
-  loadImage: (path: string, generateThumbnail?: boolean) =>
-    invoke<ImageInfo>("load_image", { path, generateThumbnail }),
+  loadImage: (path: string) => invoke<ImageInfo>("load_image", { path }),
   processImage: (input: string, options: ProcessOptions) =>
     invoke<ProcessResult>("process_image", { input, options }),
   previewImage: (input: string, options: ProcessOptions) =>
