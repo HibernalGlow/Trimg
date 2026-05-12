@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { formatBytes } from "@/lib/format";
 import { basename } from "@/lib/path";
 import { api, type ImageInfo } from "@/lib/tauri";
@@ -14,6 +15,8 @@ interface LoadedFile {
 interface InputTabProps {
   files: LoadedFile[];
   loading: boolean;
+  showThumbnails: boolean;
+  onShowThumbnailsChange: (value: boolean) => void;
   onFilesAdded: (paths: string[]) => void;
   onClear: () => void;
   onConvert: () => void;
@@ -44,6 +47,8 @@ async function resolveDroppedPaths(paths: string[]): Promise<string[]> {
 export function InputTab({
   files,
   loading,
+  showThumbnails,
+  onShowThumbnailsChange,
   onFilesAdded,
   onClear,
   onConvert,
@@ -144,7 +149,7 @@ export function InputTab({
         )}
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-center">
         <Button variant="outline" onClick={handleAddFiles} disabled={loading}>
           Add Files
         </Button>
@@ -155,6 +160,13 @@ export function InputTab({
           Clear List
         </Button>
         <div className="flex-1" />
+        <label className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground">
+          <Checkbox
+            checked={showThumbnails}
+            onCheckedChange={(c) => onShowThumbnailsChange(c === true)}
+          />
+          Show Thumbnails
+        </label>
         <Button onClick={onConvert} disabled={files.length === 0 || loading}>
           Convert
         </Button>

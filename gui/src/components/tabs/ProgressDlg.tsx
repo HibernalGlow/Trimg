@@ -49,7 +49,7 @@ export function ProgressDlg({ progress, items, onCancel }: ProgressDlgProps) {
                 {item.status === "processing" && "⏳ "}
                 {item.status === "completed" && "✓ "}
                 {item.status === "error" && "✗ "}
-                {item.file_path.split(/[/\\]/).pop()}
+                {item.file_path?.split(/[/\\]/).pop() ?? "Unknown"}
               </div>
             ))}
           </div>

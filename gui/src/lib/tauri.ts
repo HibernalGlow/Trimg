@@ -5,7 +5,7 @@ export interface ImageInfo {
   height: number;
   format: string;
   size_bytes: number;
-  thumbnail_base64: string;
+  thumbnail_base64?: string;
 }
 
 export type SaveToMode = "source" | "custom";
@@ -65,7 +65,8 @@ export interface BatchProgress {
 
 export const api = {
   scanDirectory: (path: string) => invoke<string[]>("scan_directory", { path }),
-  loadImage: (path: string) => invoke<ImageInfo>("load_image", { path }),
+  loadImage: (path: string, generateThumbnail?: boolean) =>
+    invoke<ImageInfo>("load_image", { path, generateThumbnail }),
   processImage: (input: string, options: ProcessOptions) =>
     invoke<ProcessResult>("process_image", { input, options }),
   previewImage: (input: string, options: ProcessOptions) =>

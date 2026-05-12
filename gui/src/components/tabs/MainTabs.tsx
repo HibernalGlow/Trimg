@@ -18,6 +18,7 @@ export function MainTabs() {
   const [activeTab, setActiveTab] = useState(0);
   const [files, setFiles] = useState<LoadedFile[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showThumbnails, setShowThumbnails] = useState(true);
   const { settings, updateSettings, resetSettings } = useSettings();
   const {
     batchItems,
@@ -35,7 +36,7 @@ export function MainTabs() {
       const loaded: LoadedFile[] = [];
       for (const path of paths) {
         try {
-          const info = await api.loadImage(path);
+          const info = await api.loadImage(path, showThumbnails);
           loaded.push({ path, info });
         } catch (e) {
           console.error("Failed to load:", path, e);
@@ -87,6 +88,8 @@ export function MainTabs() {
           <InputTab
             files={files}
             loading={loading}
+            showThumbnails={showThumbnails}
+            onShowThumbnailsChange={setShowThumbnails}
             onFilesAdded={handleFilesAdded}
             onClear={handleClearFiles}
             onConvert={() => setActiveTab(1)}
