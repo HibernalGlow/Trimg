@@ -44,3 +44,49 @@ tasks:
     desc: One-time MSVC PATH setup (run once after clone)
     cmds:
       - powershell -File scripts/setup.ps1
+更新
+  gui:version:
+    desc: Show current GUI version
+    cmds:
+      - echo "package.json:"
+      - powershell -Command "(Get-Content gui/package.json | ConvertFrom-Json).version"
+      - echo "Cargo.toml:"
+      - powershell -Command "(Get-Content gui/src-tauri/Cargo.toml | Select-String '^version').Line"
+      - echo "tauri.conf.json:"
+      - powershell -Command "(Get-Content gui/src-tauri/tauri.conf.json | ConvertFrom-Json).version"
+
+  gui:bump:
+    desc: Bump GUI version (usage - task gui:bump -- 0.2.0)
+    cmds:
+      - powershell -File scripts/bump-version.ps1 {{.CLI_ARGS}}
+
+  tag:list:
+    desc: List all GUI-related tags
+    cmds:
+      - git tag -l "gui-*" --sort=-version:refname
+
+  tag:create:
+    desc: Create GUI version tag (usage - task tag:create -- 0.2.0)
+    cmds:
+      - powershell -File scripts/create-tag.ps1 {{.CLI_ARGS}}
+
+  tag:push:
+    desc: Push GUI tags to remote
+    cmds:
+      - git push origin --tags
+
+  tag:delete:
+    desc: Delete local GUI tag (usage - task tag:delete -- 0.2.0)
+    cmds:
+      - powershell -File scripts/delete-tag.ps1 {{.CLI_ARGS}}
+
+  gui:release:
+    desc: Full GUI release workflow (usage - task gui:release -- 0.2.0)
+    cmds:
+      - task: gui:bump
+        vars:
+          CLI_ARGS: '{{.CLI_ARGS}}'
+      - task: tag:create
+        vars:
+          CLI_ARGS: '{{.CLI_ARGS}}'
+      - powershell -File scripts/release-summary.ps1 {{.CLI_ARGS}}

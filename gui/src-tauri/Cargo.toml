@@ -1,6 +1,6 @@
 [package]
 name = "slimg-gui"
-version = "0.1.0"
+version = "0.1.1"
 description = "slimg GUI - Image optimization tool"
 authors = ["clroot"]
 edition = "2021"
