@@ -46,11 +46,26 @@ if ($prebuiltSrc) {
     Write-Host "[setup] WARNING: No prebuilt libjxl found. Run 'cargo build --workspace' once to download it." -ForegroundColor Yellow
 }
 
-# ── 3. Warn about Git link.exe conflict ─────────────────────────
+# ── 3. Remove Git usr/bin from PATH (its link.exe shadows MSVC) ──
 $gitUsrBin = "D:\scoop\apps\git\2.54.0\usr\bin"
-if ($currentUserPath -like "*$gitUsrBin*") {
-    Write-Host "[setup] WARNING: Git usr/bin in PATH may shadow MSVC link.exe" -ForegroundColor Yellow
-    Write-Host "  If linking fails, remove from PATH: $gitUsrBin" -ForegroundColor Yellow
+$gitMingwBin = "D:\scoop\apps\git\2.54.0\mingw64\bin"
+
+$pathEntries = $currentUserPath -split ';' | Where-Object {
+    $_ -ne $gitUsrBin -and $_ -ne $gitMingwBin
+}
+$newPath = $pathEntries -join ';'
+
+if ($newPath -ne $currentUserPath) {
+    [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
+    Write-Host "[setup] Removed Git usr/bin and mingw64/bin from user PATH" -ForegroundColor Green
+} else {
+    Write-Host "[setup] PATH already clean" -ForegroundColor Gray
+}
+
+# Also check system PATH
+$systemPath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+if ($systemPath -and ($systemPath -like "*$gitUsrBin*" -or $systemPath -like "*$gitMingwBin*")) {
+    Write-Host "[setup] WARNING: Git paths found in SYSTEM PATH. Run as admin to clean." -ForegroundColor Yellow
 }
 
 Write-Host "`nSetup complete. Restart your terminal for changes to take effect." -ForegroundColor Cyan

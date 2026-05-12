@@ -4,12 +4,13 @@ on:
   push:
     tags:
       - 'gui-v*'
-  pull_request:
-    paths:
-      - 'gui/**'
-      - 'crates/**'
-      - '.github/workflows/release-gui.yml'
-  workflow_dispatch:
+  # 暂时禁用 GUI 构建，只保留 CLI
+  # pull_request:
+  #   paths:
+  #     - 'gui/**'
+  #     - 'crates/**'
+  #     - '.github/workflows/release-gui.yml'
+  # workflow_dispatch:
 
 permissions:
   contents: write
@@ -20,10 +21,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: macos-latest
-            args: --target aarch64-apple-darwin
-          - platform: ubuntu-22.04
-            args: ''
+          # 注释掉 macOS 和 Linux，只保留 Windows
+          # - platform: macos-latest
+          #   args: --target aarch64-apple-darwin
+          # - platform: ubuntu-22.04
+          #   args: ''
           - platform: windows-latest
             args: ''
 
@@ -43,24 +45,24 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
 
-      # ── Linux dependencies ──────────────────────────────────
-      - name: Install Linux dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libwebkit2gtk-4.1-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev \
-            patchelf \
-            cmake \
-            meson \
-            nasm
+      # ── Linux dependencies (已注释) ─────────────────────────
+      # - name: Install Linux dependencies
+      #   if: runner.os == 'Linux'
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install -y \
+      #       libwebkit2gtk-4.1-dev \
+      #       libayatana-appindicator3-dev \
+      #       librsvg2-dev \
+      #       patchelf \
+      #       cmake \
+      #       meson \
+      #       nasm
 
-      # ── macOS dependencies ──────────────────────────────────
-      - name: Install macOS dependencies
-        if: runner.os == 'macOS'
-        run: brew install meson nasm
+      # ── macOS dependencies (已注释) ─────────────────────────
+      # - name: Install macOS dependencies
+      #   if: runner.os == 'macOS'
+      #   run: brew install meson nasm
 
       # ── Windows dependencies ────────────────────────────────
       - name: Setup MSVC (Windows)
