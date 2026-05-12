@@ -1,3 +1,2 @@
 [env]
 SYSTEM_DEPS_DAV1D_BUILD_INTERNAL = "always"
-LIBJXL_SYS_DIR = "D:/1VSCODE/Projects/ImageAll/Trimg/target/libjxl-prebuilt"
