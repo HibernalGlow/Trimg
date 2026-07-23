@@ -22,7 +22,9 @@ pub struct PipelineOptions {
     pub crop: Option<CropMode>,
     /// Optional extend (padding) to apply after crop and before resize.
     pub extend: Option<ExtendMode>,
-    /// Fill color for the extended region (defaults to opaque white).
+    /// Fill color for the extended region. When `None`, core defaults to
+    /// opaque white; note the Kotlin/Python bindings pass an explicit
+    /// transparent fill by default instead.
     pub fill_color: Option<FillColor>,
 }
 

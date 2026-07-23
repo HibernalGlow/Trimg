@@ -71,7 +71,12 @@ impl ResizeMode {
 #[derive(Debug, Clone, uniffi::Enum)]
 pub enum CropMode {
     /// Extract a specific region.
-    Region { x: u32, y: u32, width: u32, height: u32 },
+    Region {
+        x: u32,
+        y: u32,
+        width: u32,
+        height: u32,
+    },
     /// Crop to an aspect ratio (centered).
     AspectRatio { width: u32, height: u32 },
 }
@@ -79,11 +84,20 @@ pub enum CropMode {
 impl CropMode {
     fn to_core(&self) -> slimg_core::CropMode {
         match self {
-            CropMode::Region { x, y, width, height } => slimg_core::CropMode::Region {
-                x: *x, y: *y, width: *width, height: *height,
+            CropMode::Region {
+                x,
+                y,
+                width,
+                height,
+            } => slimg_core::CropMode::Region {
+                x: *x,
+                y: *y,
+                width: *width,
+                height: *height,
             },
             CropMode::AspectRatio { width, height } => slimg_core::CropMode::AspectRatio {
-                width: *width, height: *height,
+                width: *width,
+                height: *height,
             },
         }
     }
@@ -166,7 +180,9 @@ pub struct PipelineOptions {
     pub crop: Option<CropMode>,
     /// Optional extend (padding) to apply after crop and before resize.
     pub extend: Option<ExtendMode>,
-    /// Fill color for the extended region (defaults to opaque white).
+    /// Fill color for the extended region. When unset, core defaults to
+    /// opaque white; the hand-written Kotlin/Python wrappers pass an
+    /// explicit transparent fill by default instead.
     pub fill_color: Option<FillColor>,
 }
 
