@@ -73,7 +73,7 @@ cargo install --path cli
 slimg convert photo.jpg --format webp
 
 # 최적화 (같은 포맷으로 재인코딩)
-slimg optimize photo.jpg --quality 70
+slimg optimize photo.jpg --quality 70 --overwrite
 
 # 리사이즈
 slimg resize photo.jpg --width 800

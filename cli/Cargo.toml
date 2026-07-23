@@ -20,3 +20,5 @@ indicatif = "0.18.4"
 
 [dev-dependencies]
 tempfile = "3.25.0"
+assert_cmd = "2"
+predicates = "3"

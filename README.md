@@ -73,7 +73,7 @@ For the full usage guide, see [docs/usage.md](./docs/usage.md).
 slimg convert photo.jpg --format webp
 
 # Optimize (re-encode in same format)
-slimg optimize photo.jpg --quality 70
+slimg optimize photo.jpg --quality 70 --overwrite
 
 # Resize
 slimg resize photo.jpg --width 800
