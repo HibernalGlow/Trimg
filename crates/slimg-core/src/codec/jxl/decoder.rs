@@ -24,6 +24,10 @@ impl Decoder {
         unsafe { JxlDecoderReset(self.ptr) };
 
         let events = JxlDecoderStatus_JXL_DEC_BASIC_INFO | JxlDecoderStatus_JXL_DEC_FULL_IMAGE;
+        // bindgen emits the status constants as u32 on Unix but i32 on
+        // Windows/MSVC, so this cast is required on some targets and a
+        // no-op on others.
+        #[allow(clippy::unnecessary_cast)]
         let status = unsafe { JxlDecoderSubscribeEvents(self.ptr, events as i32) };
         if status != JxlDecoderStatus_JXL_DEC_SUCCESS {
             return Err(Error::Decode("failed to subscribe decoder events".into()));
