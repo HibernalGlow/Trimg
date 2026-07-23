@@ -36,8 +36,8 @@ jobs:
         run: |
           RELEASE_VERSION="${VERSION#v}"
 
-          # Check crates.io
-          if curl -sf "https://crates.io/api/v1/crates/slimg/$RELEASE_VERSION" > /dev/null 2>&1; then
+          # Check crates.io (its API rejects requests without a descriptive User-Agent)
+          if curl -sf -A "slimg-ci (https://github.com/clroot/slimg)" "https://crates.io/api/v1/crates/slimg/$RELEASE_VERSION" > /dev/null 2>&1; then
             echo "crates=true" >> $GITHUB_OUTPUT
             echo "✅ crates.io: slimg@$RELEASE_VERSION already published"
           else
@@ -95,7 +95,7 @@ jobs:
         run: |
           CRATE_VERSION=$(cargo metadata --no-deps --format-version 1 \
             | jq -r '.packages[] | select(.name=="slimg-libjxl-sys") | .version')
-          if curl -sf "https://crates.io/api/v1/crates/slimg-libjxl-sys/${CRATE_VERSION}" > /dev/null; then
+          if curl -sf -A "slimg-ci (https://github.com/clroot/slimg)" "https://crates.io/api/v1/crates/slimg-libjxl-sys/${CRATE_VERSION}" > /dev/null; then
             echo "slimg-libjxl-sys@${CRATE_VERSION} already published, skipping"
           else
             # --no-default-features: disable vendored so cmake/bindgen are not needed
@@ -111,7 +111,7 @@ jobs:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
           RELEASE_VERSION="${VERSION#v}"
-          if curl -sf "https://crates.io/api/v1/crates/slimg-core/${RELEASE_VERSION}" > /dev/null; then
+          if curl -sf -A "slimg-ci (https://github.com/clroot/slimg)" "https://crates.io/api/v1/crates/slimg-core/${RELEASE_VERSION}" > /dev/null; then
             echo "slimg-core@${RELEASE_VERSION} already published, skipping"
           else
             cargo publish -p slimg-core
@@ -125,7 +125,7 @@ jobs:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
           RELEASE_VERSION="${VERSION#v}"
-          if curl -sf "https://crates.io/api/v1/crates/slimg/${RELEASE_VERSION}" > /dev/null; then
+          if curl -sf -A "slimg-ci (https://github.com/clroot/slimg)" "https://crates.io/api/v1/crates/slimg/${RELEASE_VERSION}" > /dev/null; then
             echo "slimg@${RELEASE_VERSION} already published, skipping"
           else
             cargo publish -p slimg
