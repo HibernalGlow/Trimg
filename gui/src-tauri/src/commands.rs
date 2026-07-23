@@ -302,6 +302,18 @@ fn process_single_file(input: &str, options: &ProcessOptions) -> Result<ProcessR
     };
 
     let output_dir = options.output_dir.as_deref().map(Path::new);
+    if let Some(dir) = output_dir {
+        // output_path treats a non-directory target as a single file path,
+        // which would collapse every batch output onto it. Make sure the
+        // configured output directory actually exists as a directory.
+        if dir.exists() && !dir.is_dir() {
+            return Err(format!(
+                "output directory is not a directory: {}",
+                dir.display()
+            ));
+        }
+        std::fs::create_dir_all(dir).map_err(|e| format!("{}: {}", dir.display(), e))?;
+    }
     let mut out_path = slimg_core::output_path(input_path, pipeline_result.format, output_dir);
 
     if !options.overwrite && out_path.exists() {
