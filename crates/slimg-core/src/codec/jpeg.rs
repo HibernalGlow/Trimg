@@ -89,7 +89,7 @@ impl Codec for JpegCodec {
 }
 
 /// Extract a human-readable message from a `catch_unwind` panic payload.
-fn panic_message(panic: &Box<dyn std::any::Any + Send>) -> String {
+fn panic_message(panic: &(dyn std::any::Any + Send)) -> String {
     if let Some(s) = panic.downcast_ref::<&str>() {
         (*s).to_string()
     } else if let Some(s) = panic.downcast_ref::<String>() {

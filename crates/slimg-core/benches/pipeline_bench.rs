@@ -1,7 +1,7 @@
-use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
-use slimg_core::codec::{get_codec, EncodeOptions};
+use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
+use slimg_core::codec::{EncodeOptions, get_codec};
 use slimg_core::resize::resize;
-use slimg_core::{convert, optimize, Format, ImageData, PipelineOptions, ResizeMode};
+use slimg_core::{Format, ImageData, PipelineOptions, ResizeMode, convert, optimize};
 
 const BENCH_IMAGE_SIZE: u32 = 512;
 
@@ -83,13 +83,9 @@ fn bench_optimize(c: &mut Criterion) {
         let encoded = pre_encode(&image, *format, 90);
 
         group.throughput(Throughput::Bytes(encoded.len() as u64));
-        group.bench_with_input(
-            BenchmarkId::from_parameter(name),
-            &encoded,
-            |b, data| {
-                b.iter(|| optimize(data, 80).unwrap());
-            },
-        );
+        group.bench_with_input(BenchmarkId::from_parameter(name), &encoded, |b, data| {
+            b.iter(|| optimize(data, 80).unwrap());
+        });
     }
 
     group.finish();

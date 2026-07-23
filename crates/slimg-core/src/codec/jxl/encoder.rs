@@ -21,29 +21,31 @@ impl Encoder {
         Ok(Self { ptr })
     }
 
-    /// Encode RGBA pixel data into JXL format.
-    pub fn encode_rgba(
+    /// Encode interleaved 8-bit pixel data into JXL format.
+    ///
+    /// `num_channels` must be 3 (RGB) or 4 (RGBA); pass 3 for fully opaque
+    /// images to avoid storing a redundant alpha channel.
+    pub fn encode(
         &mut self,
         pixels: &[u8],
         width: u32,
         height: u32,
+        num_channels: u32,
         config: &EncodeConfig,
     ) -> Result<Vec<u8>> {
+        debug_assert!(num_channels == 3 || num_channels == 4);
         unsafe { JxlEncoderReset(self.ptr) };
 
-        self.set_basic_info(width, height, config)?;
+        self.set_basic_info(width, height, num_channels, config)?;
         self.set_color_encoding()?;
 
-        let frame_settings =
-            unsafe { JxlEncoderFrameSettingsCreate(self.ptr, ptr::null()) };
+        let frame_settings = unsafe { JxlEncoderFrameSettingsCreate(self.ptr, ptr::null()) };
         if frame_settings.is_null() {
-            return Err(Error::Encode(
-                "failed to create frame settings".into(),
-            ));
+            return Err(Error::Encode("failed to create frame settings".into()));
         }
 
         self.configure_frame(frame_settings, config)?;
-        self.add_frame(frame_settings, pixels, width, height)?;
+        self.add_frame(frame_settings, pixels, width, height, num_channels)?;
 
         unsafe { JxlEncoderCloseInput(self.ptr) };
 
@@ -54,25 +56,27 @@ impl Encoder {
         &self,
         width: u32,
         height: u32,
+        num_channels: u32,
         config: &EncodeConfig,
     ) -> Result<()> {
+        let has_alpha = num_channels == 4;
         unsafe {
+            // NOTE: libjxl recommends JxlEncoderInitBasicInfo; it is not in
+            // the prebuilt bindings yet. Zeroed defaults are equivalent for
+            // every field we do not set below (0 means "auto"/"none").
             let mut info: JxlBasicInfo = std::mem::zeroed();
             info.xsize = width;
             info.ysize = height;
             info.bits_per_sample = 8;
             info.exponent_bits_per_sample = 0;
             info.num_color_channels = 3;
-            info.num_extra_channels = 1;
-            info.alpha_bits = 8;
+            info.num_extra_channels = if has_alpha { 1 } else { 0 };
+            info.alpha_bits = if has_alpha { 8 } else { 0 };
             info.alpha_exponent_bits = 0;
             info.orientation = JxlOrientation_JXL_ORIENT_IDENTITY;
             info.uses_original_profile = if config.lossless { 1 } else { 0 };
 
-            check_status(
-                JxlEncoderSetBasicInfo(self.ptr, &info),
-                "set basic info",
-            )
+            check_status(JxlEncoderSetBasicInfo(self.ptr, &info), "set basic info")
         }
     }
 
@@ -94,10 +98,7 @@ impl Encoder {
     ) -> Result<()> {
         if config.lossless {
             unsafe {
-                check_status(
-                    JxlEncoderSetFrameLossless(settings, 1),
-                    "set lossless",
-                )?;
+                check_status(JxlEncoderSetFrameLossless(settings, 1), "set lossless")?;
             }
         }
         unsafe {
@@ -114,25 +115,21 @@ impl Encoder {
         pixels: &[u8],
         width: u32,
         height: u32,
+        num_channels: u32,
     ) -> Result<()> {
         let format = JxlPixelFormat {
-            num_channels: 4,
+            num_channels,
             data_type: JxlDataType_JXL_TYPE_UINT8,
             endianness: JxlEndianness_JXL_NATIVE_ENDIAN,
             align: 0,
         };
 
-        let expected = (width as usize) * (height as usize) * 4;
+        let expected = (width as usize) * (height as usize) * num_channels as usize;
         debug_assert_eq!(pixels.len(), expected);
 
         unsafe {
             check_status(
-                JxlEncoderAddImageFrame(
-                    settings,
-                    &format,
-                    pixels.as_ptr().cast(),
-                    pixels.len(),
-                ),
+                JxlEncoderAddImageFrame(settings, &format, pixels.as_ptr().cast(), pixels.len()),
                 "add image frame",
             )
         }
@@ -146,9 +143,8 @@ impl Encoder {
             let mut next_out = buffer.as_mut_ptr();
             let mut avail_out = buffer.len();
 
-            let status = unsafe {
-                JxlEncoderProcessOutput(self.ptr, &mut next_out, &mut avail_out)
-            };
+            let status =
+                unsafe { JxlEncoderProcessOutput(self.ptr, &mut next_out, &mut avail_out) };
 
             let written = buffer.len() - avail_out;
             all_output.extend_from_slice(&buffer[..written]);

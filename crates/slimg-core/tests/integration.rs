@@ -83,7 +83,13 @@ fn convert_with_resize() {
 fn roundtrip_all_encodable_formats() {
     let image = create_test_image();
 
-    let formats = vec![Format::Jpeg, Format::Png, Format::WebP, Format::Qoi, Format::Avif];
+    let formats = vec![
+        Format::Jpeg,
+        Format::Png,
+        Format::WebP,
+        Format::Qoi,
+        Format::Avif,
+    ];
 
     for fmt in formats {
         let options = PipelineOptions {
@@ -122,7 +128,12 @@ fn convert_with_crop_region() {
         format: Format::Png,
         quality: 80,
         resize: None,
-        crop: Some(CropMode::Region { x: 10, y: 10, width: 50, height: 40 }),
+        crop: Some(CropMode::Region {
+            x: 10,
+            y: 10,
+            width: 50,
+            height: 40,
+        }),
         extend: None,
         fill_color: None,
     };
@@ -142,7 +153,10 @@ fn convert_with_crop_aspect_ratio() {
         format: Format::WebP,
         quality: 80,
         resize: None,
-        crop: Some(CropMode::AspectRatio { width: 1, height: 1 }),
+        crop: Some(CropMode::AspectRatio {
+            width: 1,
+            height: 1,
+        }),
         extend: None,
         fill_color: None,
     };
@@ -163,7 +177,10 @@ fn extend_aspect_ratio_jpeg() {
         quality: 80,
         resize: None,
         crop: None,
-        extend: Some(ExtendMode::AspectRatio { width: 1, height: 1 }),
+        extend: Some(ExtendMode::AspectRatio {
+            width: 1,
+            height: 1,
+        }),
         fill_color: Some(FillColor::Solid([255, 255, 255, 255])),
     };
 
@@ -190,7 +207,10 @@ fn extend_size_png() {
         quality: 80,
         resize: None,
         crop: None,
-        extend: Some(ExtendMode::Size { width: target_w, height: target_h }),
+        extend: Some(ExtendMode::Size {
+            width: target_w,
+            height: target_h,
+        }),
         fill_color: Some(FillColor::Transparent),
     };
 

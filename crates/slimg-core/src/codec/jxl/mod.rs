@@ -24,7 +24,15 @@ impl Codec for JxlCodec {
     fn encode(&self, image: &ImageData, options: &EncodeOptions) -> Result<Vec<u8>> {
         let config = types::EncodeConfig::from_quality(options.quality);
         let mut enc = encoder::Encoder::new()?;
-        enc.encode_rgba(&image.data, image.width, image.height, &config)
+
+        // Fully opaque images don't need an alpha channel; encoding RGB
+        // avoids storing a redundant plane.
+        let is_opaque = image.data.chunks_exact(4).all(|px| px[3] == u8::MAX);
+        if is_opaque {
+            enc.encode(&image.to_rgb(), image.width, image.height, 3, &config)
+        } else {
+            enc.encode(&image.data, image.width, image.height, 4, &config)
+        }
     }
 }
 
@@ -52,7 +60,9 @@ mod tests {
         let image = create_test_image(8, 8);
         let options = EncodeOptions { quality: 80 };
 
-        let encoded = codec.encode(&image, &options).expect("encode should succeed");
+        let encoded = codec
+            .encode(&image, &options)
+            .expect("encode should succeed");
         assert!(!encoded.is_empty(), "encoded data should not be empty");
 
         // Check JXL magic bytes (bare codestream: 0xFF 0x0A)
@@ -71,7 +81,9 @@ mod tests {
         let image = create_test_image(8, 8);
         let options = EncodeOptions { quality: 100 };
 
-        let encoded = codec.encode(&image, &options).expect("lossless encode should succeed");
+        let encoded = codec
+            .encode(&image, &options)
+            .expect("lossless encode should succeed");
         assert!(!encoded.is_empty());
     }
 
@@ -90,6 +102,61 @@ mod tests {
     }
 
     #[test]
+    fn roundtrip_lossless_preserves_alpha() {
+        let codec = JxlCodec;
+        let mut image = create_test_image(4, 4);
+        for (i, px) in image.data.chunks_exact_mut(4).enumerate() {
+            px[3] = (i * 16) as u8;
+        }
+        let original = image.clone();
+
+        let encoded = codec
+            .encode(&image, &EncodeOptions { quality: 100 })
+            .expect("encode failed");
+        let decoded = codec.decode(&encoded).expect("decode failed");
+
+        assert_eq!(decoded.data, original.data);
+    }
+
+    #[test]
+    fn opaque_image_decodes_back_opaque() {
+        let codec = JxlCodec;
+        let image = create_test_image(8, 8); // alpha = 255 everywhere
+
+        let encoded = codec
+            .encode(&image, &EncodeOptions { quality: 100 })
+            .expect("encode failed");
+        let decoded = codec.decode(&encoded).expect("decode failed");
+
+        assert_eq!(decoded.width, 8);
+        assert_eq!(decoded.height, 8);
+        assert!(decoded.data.chunks_exact(4).all(|px| px[3] == u8::MAX));
+    }
+
+    #[test]
+    fn decode_truncated_data_returns_error() {
+        let codec = JxlCodec;
+        let image = create_test_image(16, 16);
+        let encoded = codec
+            .encode(&image, &EncodeOptions { quality: 80 })
+            .expect("encode failed");
+
+        // Cut the codestream short; the decoder must error out instead
+        // of spinning forever waiting for more input.
+        let truncated = &encoded[..encoded.len() / 2];
+        assert!(codec.decode(truncated).is_err());
+    }
+
+    #[test]
+    fn decode_invalid_data_returns_error() {
+        let codec = JxlCodec;
+        // Valid signature followed by garbage.
+        let mut data = vec![0xFF, 0x0A];
+        data.extend_from_slice(&[0xAB; 64]);
+        assert!(codec.decode(&data).is_err());
+    }
+
+    #[test]
     fn roundtrip_lossless() {
         let codec = JxlCodec;
         let original = create_test_image(4, 4);
@@ -101,8 +168,7 @@ mod tests {
         assert_eq!(decoded.width, original.width);
         assert_eq!(decoded.height, original.height);
         assert_eq!(
-            decoded.data,
-            original.data,
+            decoded.data, original.data,
             "lossless roundtrip should produce identical pixels"
         );
     }

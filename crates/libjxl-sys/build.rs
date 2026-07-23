@@ -94,6 +94,7 @@ fn run_bindgen(src_include: &Path, install_include: &Path, out_file: &Path) {
         .allowlist_function("JxlEncoderDestroy")
         .allowlist_function("JxlEncoderReset")
         .allowlist_function("JxlEncoderSetBasicInfo")
+        .allowlist_function("JxlEncoderInitBasicInfo")
         .allowlist_function("JxlEncoderSetColorEncoding")
         .allowlist_function("JxlEncoderFrameSettingsCreate")
         .allowlist_function("JxlEncoderSetFrameDistance")

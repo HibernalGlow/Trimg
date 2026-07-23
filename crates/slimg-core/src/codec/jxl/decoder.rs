@@ -29,9 +29,7 @@ impl Decoder {
             return Err(Error::Decode("failed to subscribe decoder events".into()));
         }
 
-        let status = unsafe {
-            JxlDecoderSetInput(self.ptr, data.as_ptr(), data.len())
-        };
+        let status = unsafe { JxlDecoderSetInput(self.ptr, data.as_ptr(), data.len()) };
         if status != JxlDecoderStatus_JXL_DEC_SUCCESS {
             return Err(Error::Decode("failed to set decoder input".into()));
         }
@@ -61,9 +59,7 @@ impl Decoder {
                 height = info.ysize;
 
                 let mut buf_size: usize = 0;
-                let s = unsafe {
-                    JxlDecoderImageOutBufferSize(self.ptr, &format, &mut buf_size)
-                };
+                let s = unsafe { JxlDecoderImageOutBufferSize(self.ptr, &format, &mut buf_size) };
                 if s != JxlDecoderStatus_JXL_DEC_SUCCESS {
                     return Err(Error::Decode("failed to get output buffer size".into()));
                 }
@@ -86,11 +82,21 @@ impl Decoder {
                 if !pixels.is_empty() {
                     return Ok((width, height, pixels));
                 }
-                return Err(Error::Decode("decoder finished without producing image".into()));
+                return Err(Error::Decode(
+                    "decoder finished without producing image".into(),
+                ));
             } else if status == JxlDecoderStatus_JXL_DEC_ERROR {
                 return Err(Error::Decode("JXL decoding failed".into()));
+            } else if status == JxlDecoderStatus_JXL_DEC_NEED_MORE_INPUT {
+                // After JxlDecoderCloseInput this status means the
+                // codestream is truncated; looping again would never
+                // make progress.
+                return Err(Error::Decode("truncated JXL data".into()));
+            } else {
+                return Err(Error::Decode(format!(
+                    "unexpected JXL decoder status: {status}"
+                )));
             }
-            // JXL_DEC_NEED_MORE_INPUT shouldn't happen since we closed input
         }
     }
 }

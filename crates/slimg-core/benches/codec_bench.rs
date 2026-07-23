@@ -1,7 +1,5 @@
-use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
-use slimg_core::{
-    codec::get_codec, EncodeOptions, Format, ImageData,
-};
+use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
+use slimg_core::{EncodeOptions, Format, ImageData, codec::get_codec};
 
 const BENCH_IMAGE_SIZE: u32 = 512;
 
@@ -24,12 +22,24 @@ fn generate_test_image(width: u32, height: u32) -> ImageData {
 /// JXL is excluded because encoding is not supported (license restrictions).
 /// AVIF encoding works on all platforms via `ravif`.
 fn encodable_formats() -> Vec<Format> {
-    vec![Format::Jpeg, Format::Png, Format::WebP, Format::Qoi, Format::Avif]
+    vec![
+        Format::Jpeg,
+        Format::Png,
+        Format::WebP,
+        Format::Qoi,
+        Format::Avif,
+    ]
 }
 
 /// Formats that support both encoding and decoding (needed for decode benchmarks).
 fn decodable_formats() -> Vec<Format> {
-    vec![Format::Jpeg, Format::Png, Format::WebP, Format::Qoi, Format::Avif]
+    vec![
+        Format::Jpeg,
+        Format::Png,
+        Format::WebP,
+        Format::Qoi,
+        Format::Avif,
+    ]
 }
 
 fn bench_encode(c: &mut Criterion) {
