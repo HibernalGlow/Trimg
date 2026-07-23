@@ -1,11 +1,11 @@
 [package]
 name = "slimg-core"
-version = "0.5.1"
-edition = "2024"
-license = "MIT"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
 description = "Image optimization library — encode, decode, convert, resize with MozJPEG, OxiPNG, WebP, AVIF, and QOI"
-repository = "https://github.com/clroot/slimg"
-homepage = "https://github.com/clroot/slimg"
+repository.workspace = true
+homepage.workspace = true
 readme = "README.md"
 keywords = ["image", "optimization", "compression", "webp", "avif"]
 categories = ["multimedia::images", "encoding"]
