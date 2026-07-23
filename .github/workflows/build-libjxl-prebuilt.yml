@@ -191,6 +191,7 @@ jobs:
             --allowlist-function "JxlEncoderDestroy" \
             --allowlist-function "JxlEncoderReset" \
             --allowlist-function "JxlEncoderSetBasicInfo" \
+            --allowlist-function "JxlEncoderInitBasicInfo" \
             --allowlist-function "JxlEncoderSetColorEncoding" \
             --allowlist-function "JxlEncoderFrameSettingsCreate" \
             --allowlist-function "JxlEncoderSetFrameDistance" \
@@ -315,6 +316,25 @@ jobs:
       - name: List archives
         run: ls -lh dist/
 
+      - name: Generate checksums
+        run: |
+          cd dist
+          sha256sum *.tar.gz > checksums.txt
+          cat checksums.txt
+
+          # Surface the checksums prominently: they must be copied into
+          # PREBUILT_SHA256 in crates/libjxl-sys/build.rs before publishing
+          # the crate that downloads these assets.
+          {
+            echo "## SHA-256 checksums"
+            echo ""
+            echo "Update \`PREBUILT_SHA256\` in \`crates/libjxl-sys/build.rs\` with:"
+            echo ""
+            echo '```'
+            cat checksums.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Create Release
         run: |
           # Delete existing release if re-running
@@ -324,4 +344,4 @@ jobs:
           gh release create "$RELEASE_TAG" \
             --title "libjxl prebuilt v${{ inputs.crate_version }}" \
             --notes "Prebuilt static libraries for slimg-libjxl-sys v${{ inputs.crate_version }} (libjxl ${{ inputs.libjxl_tag }})" \
-            dist/*.tar.gz
+            dist/*.tar.gz dist/checksums.txt

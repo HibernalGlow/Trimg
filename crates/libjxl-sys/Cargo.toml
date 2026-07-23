@@ -21,6 +21,7 @@ vendored = ["dep:cmake", "dep:bindgen"]
 [build-dependencies]
 cmake = { version = "0.1", optional = true }
 bindgen = { version = "0.71", optional = true }
+sha2 = "0.10"
 
 [package.metadata.docs.rs]
 no-default-features = true

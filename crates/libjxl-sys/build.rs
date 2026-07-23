@@ -139,6 +139,65 @@ fn run_bindgen(src_include: &Path, install_include: &Path, out_file: &Path) {
 
 // ── Prebuilt download ───────────────────────────────────────────────────────
 
+/// Pinned SHA-256 checksums of the prebuilt archives for the release tag
+/// matching this crate's version (`libjxl-prebuilt-v{CARGO_PKG_VERSION}`).
+///
+/// When bumping this crate's version:
+/// 1. run the `build-libjxl-prebuilt` workflow with the new version so the
+///    release assets exist,
+/// 2. update this table from the `checksums.txt` the workflow prints,
+/// 3. only then publish the crate.
+const PREBUILT_SHA256: &[(&str, &str)] = &[
+    (
+        "linux-x86_64",
+        "26f6905b80c1961dea6a1c3cd35d9988a5cec437b00ab02048cb0c784ea0bd24",
+    ),
+    (
+        "linux-aarch64",
+        "f957de457ba5dd6cc7dcda95213721a52c84646c1489abe2ffc6292628dfac39",
+    ),
+    (
+        "macos-x86_64",
+        "e7b8cb576526e17a62390c65fab6484efe2720db9055d48bdeb331e4a73ccc75",
+    ),
+    (
+        "macos-aarch64",
+        "356a694d55f6c62103b09c9590cab2e9e3d30a4e6d56ec97f63980a942bed4ba",
+    ),
+    (
+        "windows-x86_64",
+        "fc7da1c7d6aea8833b2746fa442f6c69e11a64fa3951597ab431050074aaf27e",
+    ),
+];
+
+fn expected_sha256(platform: &str) -> &'static str {
+    PREBUILT_SHA256
+        .iter()
+        .find(|(p, _)| *p == platform)
+        .map(|(_, sha)| *sha)
+        .unwrap_or_else(|| panic!("slimg-libjxl-sys: no pinned checksum for platform {platform}"))
+}
+
+fn verify_sha256(path: &Path, expected: &str, url: &str) {
+    use sha2::{Digest, Sha256};
+
+    let data = std::fs::read(path)
+        .unwrap_or_else(|e| panic!("slimg-libjxl-sys: failed to read downloaded archive: {e}"));
+    let actual = format!("{:x}", Sha256::digest(&data));
+
+    if actual != expected {
+        let _ = std::fs::remove_file(path);
+        panic!(
+            "slimg-libjxl-sys: checksum mismatch for {url}\n\
+             expected: {expected}\n\
+             actual:   {actual}\n\
+             The release asset does not match the checksum pinned in this \
+             crate. Refusing to link it. If the prebuilt archives were \
+             legitimately regenerated, update PREBUILT_SHA256 in build.rs."
+        );
+    }
+}
+
 fn download_prebuilt() -> PathBuf {
     let version = env!("CARGO_PKG_VERSION");
     let platform = detect_platform();
@@ -185,6 +244,10 @@ fn download_prebuilt() -> PathBuf {
          URL: {url}\n\
          Hint: check network connectivity, or set LIBJXL_SYS_DIR, or enable the vendored feature"
     );
+
+    // Verify integrity against the checksum pinned in this crate before
+    // extracting or linking anything.
+    verify_sha256(&archive_path, expected_sha256(platform), &url);
 
     // Extract via tar.
     let status = Command::new("tar")
